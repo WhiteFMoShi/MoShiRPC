@@ -35,7 +35,7 @@ private:
     class ThreadWorker {
     public:
         ThreadWorker(ThreadPool& pool, int id) : pool_(pool), id_(id) {
-            std::cout << "thread" << std::this_thread::get_id() << " start id:" << id << std::endl; 
+            std::cout << "ThreadWorker start, id:" << id << std::endl; 
         }
         
         // 从线程池的任务队列中获取任务并执行

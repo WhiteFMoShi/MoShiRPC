@@ -3,8 +3,6 @@
 #include <vector>
 
 #include "safeQueue.h"
-// 假设 SafeQueue 的定义在前面已经给出
-// 这里省略 SafeQueue 的定义代码
 
 int main() {
     SafeQueue<int> safeQueue;
@@ -34,6 +32,9 @@ int main() {
     std::vector<std::thread> pushThreads;
     for (int i = 0; i < numPushThreads; ++i) {
         pushThreads.emplace_back(pushTask);
+    }
+    if (pushThreads.size() == numPopThreads) {
+        std::cout << "The Number of threads within pushThreads is right !!!\n";
     }
 
     // 创建并启动 pop 线程

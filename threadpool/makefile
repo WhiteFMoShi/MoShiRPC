@@ -36,6 +36,9 @@ test_queue: $(SAFEQUEUE_DIR)/test.cpp $(SAFEQUEUE_DIR)/safeQueue.h
 
 	$(SAFEQUEUE_DIR)/$(OBJ_DIR_NAME)/test_queue
 
+example: threadpool
+	g++ -o $(OBJ_DIR_NAME)/example example.cpp $(OBJ_DIR_NAME)/threadPool.o && \
+	$(OBJ_DIR_NAME)/example
 
 .PHONY: clean
 clean:

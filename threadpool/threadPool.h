@@ -52,7 +52,7 @@ private:
     SafeQueue<std::function<void()>> queue_; // 任务队列（执行的都是void())
 
     void f_init_();
-    void f_turn_off_();
+    void f_turn_off_(); // 关闭线程池
 };
 
 template <class T, class... Args>

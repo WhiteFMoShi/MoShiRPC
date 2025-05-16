@@ -8,16 +8,17 @@
 
 class LogConfig {
 public:
-    // 获取makefile所在的目录（默认直接make而不使用-file指定）
-    std::string getWorkSpace();
+    LogConfig(std::string configfile_name = "log.config") {
+        path_ = getWorkSpace_();
+        name_ = configfile_name;
+        fullPath_ = path_ + "/" + name_; // log.config路径
 
-    LogConfig(std::string name = "log.config") {
-        path_ = getWorkSpace();
-        name_ = name;
-
-        fullPath_ = path_ + "/" + name_;
+        getConfig_();
     }
-    bool getConfig();
+    LogConfig operator=(LogConfig&&) = delete;
+    LogConfig(const LogConfig&) = delete;
+    LogConfig(LogConfig&&) = delete;
+
 private:
     /*
         Log.Config的信息，用于找到配置文件
@@ -30,15 +31,18 @@ private:
         log文件相关信息
     */
     std::string logDir;
-    std::string logName; // Log文件的名字
+    // std::string logName; // Log文件的名字
 
     // log具有的配置信息
     std::unordered_map<std::string, std::any> config_ {
         {"using_threadpool", false},
-        {"log_dir", "/Log"},
+        {"log_dir_relative_path", "/Log"},
     };
 
 private:
+    std::string getWorkSpace_(); // 获取makefile所在的目录（默认直接make而不使用-file指定）
+    bool getConfig_(); // 获取log.config中的配置信息
+
     const std::string trim_(std::string& str); // 去除字符串前后的空格
     void toLower_(std::string& str); // 将字符串统一转换成小写 
 };

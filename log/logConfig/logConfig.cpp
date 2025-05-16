@@ -11,9 +11,9 @@
 
 #include "logConfig.h"
 
-// #define LOGCONFIG_DEBUG
+#define LOGCONFIG_DEBUG
 
-std::string LogConfig::getWorkSpace() {
+std::string LogConfig::getWorkSpace_() {
     char path[4096]; // Linux中，完整路径的最大长度
     try {
         if(nullptr == getcwd(path, sizeof(path)))
@@ -25,7 +25,7 @@ std::string LogConfig::getWorkSpace() {
     return std::string(path);
 }
 
-bool LogConfig::getConfig() {
+bool LogConfig::getConfig_() {
     std::fstream fs;
     fs.open(fullPath_, std::ios_base::in); // 只读模式
     bool flag = false; // 用于标识用户自定义的log.config是否被读取
@@ -69,6 +69,14 @@ bool LogConfig::getConfig() {
 
         fs.close();
     }
+#ifdef LOGCONFIG_DEBUG
+    if(flag) {
+        std::cout << "Config file read succ!!!" << std::endl;
+    }
+    else {
+        std::cerr << "Config file doesn't exist or path error, auto touch new one!!!" << std::endl;
+    }
+#endif
 
     return flag;
 }

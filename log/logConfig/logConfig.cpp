@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <fstream>
 #include <filesystem>
-// #include <unistd.h>
 #include <ios>
 #include <iostream>
 #include <sstream>
@@ -15,11 +14,24 @@
 
 // #define LOGCONFIG_DEBUG
 
+LogConfig::LogConfig(std::string conf_dir, std::string configfile_name) {
+    path_ = getWorkSpace_();
+    name_ = configfile_name;
+    conf_dir_ = conf_dir;
+    fullPath_ = path_ + "/" + conf_dir + "/" + name_; // log.config路径
+
+    getConfig_();
+}
+
+bool LogConfig::using_threadpool() {
+    return std::any_cast<bool>(config_["using_threadpool"]);
+}
+
 // 使用标准库的、更加通用的实现
 std::string LogConfig::getWorkSpace_() {
     std::string workdir(std::filesystem::current_path().c_str());
 #ifdef  LOGCONFIG_DEBUG
-    std::cout << "workdir: " << workdir << std:: endl;
+    std::cout << "workdir: " << workdir << std::endl;
 #endif
     return workdir;
 }
@@ -29,7 +41,7 @@ bool LogConfig::getConfig_() {
 
     file_stream.open(fullPath_, std::ios_base::in); // 只读模式
 #ifdef  LOGCONFIG_DEBUG
-            std::cout << "Config file path: " << fullPath_ << std:: endl;
+            std::cout << "Config file path: " << fullPath_ << std::endl;
 #endif
     bool flag = false; // 用于标识用户自定义的log.config是否被读取
 
@@ -39,7 +51,7 @@ bool LogConfig::getConfig_() {
         char line[256];
         while(file_stream.getline(line, 256, '\n')) {
 #ifdef  LOGCONFIG_DEBUG
-            std::cout << "line: " << line << std:: endl;
+            std::cout << "line: " << line << std::endl;
 #endif
             std::stringstream ss(line);
             std::string key, value;
@@ -67,8 +79,9 @@ bool LogConfig::getConfig_() {
 
         file_stream.open(fullPath_, std::ios_base::out);
         // 向其中添加配置信息
-        for(auto& [key, value] : config_) {
+        for(const auto& key : sequence_) {
             file_stream << key << ": ";
+            auto value = config_[key];
             if(value.type() == typeid(bool)) {
                 file_stream << (std::any_cast<bool>(value) ? "true" : "false") << std::endl;
             }

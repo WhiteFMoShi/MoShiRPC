@@ -4,40 +4,40 @@
 #include <string>
 #include <fstream>
 #include <unordered_map>
+#include <vector>
 
 class LogConfig {
 public:
-    LogConfig(std::string conf_dir = "conf", std::string configfile_name = "log.config") {
-        path_ = getWorkSpace_();
-        name_ = configfile_name;
-        conf_dir_ = conf_dir;
-        fullPath_ = path_ + "/" + conf_dir + "/" + name_; // log.config路径
-
-        getConfig_();
-    }
+    LogConfig(std::string conf_dir = "conf", std::string configfile_name = "log.config");
     LogConfig operator=(LogConfig&&) = delete;
     LogConfig(const LogConfig&) = delete;
     LogConfig(LogConfig&&) = delete;
 
+    bool using_threadpool();
 private:
     /*
         Log.Config的信息，用于找到配置文件
     */
     std::string path_; // 文件路径
-    std::string conf_dir_; // 配置文件目录
     std::string name_; // 文件名
     std::string fullPath_; // config文件全路径
+    std::string conf_dir_; // 配置文件所在目录
 
     /*
         log文件相关信息
     */
     std::string logDir;
-    // std::string logName; // Log文件的名字
 
     // log具有的配置信息
     std::unordered_map<std::string, std::any> config_ {
         {"using_threadpool", false},
         {"log_dir_relative_path", "/Log"},
+    };
+
+    // 键顺序（确保文件中默认的、具有相关性的配置信息是相邻的）
+    std::vector<std::string> sequence_ {
+        "using_threadpool",
+        "log_dir_relative_path"
     };
 
 private:

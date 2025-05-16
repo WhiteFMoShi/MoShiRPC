@@ -11,7 +11,7 @@
 
 #include "logConfig.h"
 
-#define LOGCONFIG_DEBUG
+// #define LOGCONFIG_DEBUG
 
 std::string LogConfig::getWorkSpace_() {
     char path[4096]; // Linux中，完整路径的最大长度

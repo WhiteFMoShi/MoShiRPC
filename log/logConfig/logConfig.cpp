@@ -9,7 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <unistd.h>
+// #include <unistd.h>
 
 #include "logConfig.h"
 

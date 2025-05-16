@@ -2,6 +2,8 @@
 #include <cctype>
 #include <cstddef>
 #include <fstream>
+#include <filesystem>
+// #include <unistd.h>
 #include <ios>
 #include <iostream>
 #include <sstream>
@@ -13,28 +15,29 @@
 
 // #define LOGCONFIG_DEBUG
 
+// 使用标准库的、更加通用的实现
 std::string LogConfig::getWorkSpace_() {
-    char path[4096]; // Linux中，完整路径的最大长度
-    try {
-        if(nullptr == getcwd(path, sizeof(path)))
-            throw std::runtime_error("Get WorkSpace Error!!!");
-    } catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
-        return "";
-    }
-    return std::string(path);
+    std::string workdir(std::filesystem::current_path().c_str());
+#ifdef  LOGCONFIG_DEBUG
+    std::cout << "workdir: " << workdir << std:: endl;
+#endif
+    return workdir;
 }
 
 bool LogConfig::getConfig_() {
-    std::fstream fs;
-    fs.open(fullPath_, std::ios_base::in); // 只读模式
+    std::fstream file_stream;
+
+    file_stream.open(fullPath_, std::ios_base::in); // 只读模式
+#ifdef  LOGCONFIG_DEBUG
+            std::cout << "Config file path: " << fullPath_ << std:: endl;
+#endif
     bool flag = false; // 用于标识用户自定义的log.config是否被读取
 
     // 文件成功打开了
-    if(fs.is_open()) {
+    if(file_stream.is_open()) {
         flag = true;
         char line[256];
-        while(fs.getline(line, 256, '\n')) {
+        while(file_stream.getline(line, 256, '\n')) {
 #ifdef  LOGCONFIG_DEBUG
             std::cout << "line: " << line << std:: endl;
 #endif
@@ -51,23 +54,29 @@ bool LogConfig::getConfig_() {
             config_[key] = (value == "true");
         }
 
-        fs.close();
+        file_stream.close();
     }
     else {
-        fs.close(); // 关闭文件后重新打开
-        fs.open(fullPath_, std::ios_base::out);
+        file_stream.close(); // 关闭文件后重新打开
 
-        // 向其中添加配置信息
-        for(auto& [key, value] : config_) {
-            fs << key << ": ";
-            if(value.type() == typeid(bool)) {
-                fs << (std::any_cast<bool>(value) ? "true" : "false") << std::endl;
-            }
-            else if(value.type() == typeid(const char*))
-                fs << std::any_cast<const char*>(value) << std::endl;
+        std::filesystem::path p(fullPath_);
+        std::filesystem::path parent_p(p.parent_path()); // 用于目录检查
+        if(!std::filesystem::exists(parent_p) && !std::filesystem::create_directory(parent_p)) { // 目录不存在就创建目录
+            throw std::runtime_error("Create conf path error!!!"); // 目录创建失败（抛出异常）
         }
 
-        fs.close();
+        file_stream.open(fullPath_, std::ios_base::out);
+        // 向其中添加配置信息
+        for(auto& [key, value] : config_) {
+            file_stream << key << ": ";
+            if(value.type() == typeid(bool)) {
+                file_stream << (std::any_cast<bool>(value) ? "true" : "false") << std::endl;
+            }
+            else if(value.type() == typeid(const char*))
+                file_stream << std::any_cast<const char*>(value) << std::endl;
+        }
+
+        file_stream.close();
     }
 #ifdef LOGCONFIG_DEBUG
     if(flag) {

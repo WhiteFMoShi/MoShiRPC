@@ -3,15 +3,15 @@
 #include <any>
 #include <string>
 #include <fstream>
-#include <unistd.h>
 #include <unordered_map>
 
 class LogConfig {
 public:
-    LogConfig(std::string configfile_name = "log.config") {
+    LogConfig(std::string conf_dir = "conf", std::string configfile_name = "log.config") {
         path_ = getWorkSpace_();
         name_ = configfile_name;
-        fullPath_ = path_ + "/" + name_; // log.config路径
+        conf_dir_ = conf_dir;
+        fullPath_ = path_ + "/" + conf_dir + "/" + name_; // log.config路径
 
         getConfig_();
     }
@@ -24,6 +24,7 @@ private:
         Log.Config的信息，用于找到配置文件
     */
     std::string path_; // 文件路径
+    std::string conf_dir_; // 配置文件目录
     std::string name_; // 文件名
     std::string fullPath_; // config文件全路径
 

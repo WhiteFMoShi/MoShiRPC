@@ -9,6 +9,7 @@
 #include <condition_variable>
 
 #include "logConfig/logConfig.h"
+#include "logFormat/logFormat.h"
 
 class Log {
 public:
@@ -16,29 +17,21 @@ public:
         
     }
 private:
-    enum Level {
-        Debug = 1,
-        Info,
-        Warning,
-        Error,
-        Critical // 严重错误
-    };
-
-    enum Mode {
-        Sync,
-        Async,
-    };
+    // enum Mode {
+    //     Sync,
+    //     Async,
+    // };
 
     LogConfig log_config_;
-    Level Level_; // 日志级别（不应该在这，应该是实际打印的时候使用）
+    LogFormat fmt_;
+    // Level Level_; // 日志级别（不应该在这，应该是实际打印的时候使用）
 
     std::vector<std::string> buffer_; // 任务队列
-    std::string name;
 
     std::mutex mtx_;
     std::condition_variable cv_;
 
-    static Log* log_;
+    static Log* log_; // 单例
 
 private:
     Log();

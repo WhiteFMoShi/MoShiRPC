@@ -1,2 +1,12 @@
 # 忽略所有Debug文件
 **/Debug
+
+# 忽略根目录下的测试文件
+main
+main.cpp
+makefile
+log.config
+conf
+
+# 忽略所有测试代码
+**/test*

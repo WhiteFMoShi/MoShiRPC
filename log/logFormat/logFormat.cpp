@@ -3,28 +3,51 @@
 
 #include "logFormat.h"
 
-const std::string LogFormat::makeLog(Level level, std::string module, const std::string& msg) {
+// #define LOGFORMAT_DEBUG
+
+std::string LogFormat::makeLog(LogLevel level, const std::string& module, const std::string& time, const std::string& msg) {
     std::ostringstream oss;
-    oss << st_.now() << " ";
+    splicing_(oss, level, module, time, msg);
+
+#ifdef LOGFORMAT_DEBUG
+    std::cout << oss.str() << std::endl;
+#endif
+
+    return oss.str();
+}
+
+std::string LogFormat::makeLogln(LogLevel level, const std::string& module, const std::string& time, const std::string& msg) {
+    std::ostringstream oss;
+    splicing_(oss, level, module, time, msg);
+    oss << '\n';
+
+#ifdef LOGFORMAT_DEBUG
+    std::cout << oss.str() << std::endl;
+#endif
+
+    return oss.str();
+}
+
+void LogFormat::splicing_(std::ostringstream& oss, LogLevel level, const std::string& module, const std::string& time, const std::string& msg) {
+    oss << time << " ";
     switch (level) {
-        case Level::Debug:
+        case LogLevel::Debug:
             oss << "[Debug]";
             break;
-        case Level::Info:
+        case LogLevel::Info:
             oss << "[Info]";
             break; 
-        case Level::Warning:
+        case LogLevel::Warning:
             oss << "[Warning]";
             break;
-        case Level::Error:
+        case LogLevel::Error:
             oss << "[Error]";
             break;
-        case Level::Critical:
+        case LogLevel::Critical:
             oss << "[Critical]";
             break;
         default:
-            throw std::runtime_error("No matching Log Level!!!\n");
+            throw std::runtime_error("No matching Log Level!!!");
     }
-    oss << " [" << module << "] " << msg << std::endl;
-    return oss.str();
+    oss << " [" << module << "] " << msg;
 }

@@ -7,6 +7,7 @@ main.cpp
 makefile
 log.config
 conf
+Log
 
 # 忽略所有测试代码
 **/test*

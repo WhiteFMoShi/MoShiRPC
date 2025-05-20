@@ -15,7 +15,9 @@ public:
         Critical // 严重错误
     };
 
-    const std::string make_log(Level level, std::string module, const std::string& msg);
+    // 生成格式化的log字符串
+    const std::string makeLog(Level level, std::string module, const std::string& msg);
 private:
     TimeStamp st_;
 };
+

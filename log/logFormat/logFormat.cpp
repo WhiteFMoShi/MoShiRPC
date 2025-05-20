@@ -3,7 +3,7 @@
 
 #include "logFormat.h"
 
-const std::string LogFormat::make_log(Level level, std::string module, const std::string& msg) {
+const std::string LogFormat::makeLog(Level level, std::string module, const std::string& msg) {
     std::ostringstream oss;
     oss << st_.now() << " ";
     switch (level) {

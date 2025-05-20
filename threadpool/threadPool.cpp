@@ -1,5 +1,7 @@
 #include "threadPool.h"
 
+// #define THREADPOOL_DEBUG
+
 void ThreadPool::ThreadWorker::operator() () {
     std::function<void()> f;
     
@@ -22,8 +24,15 @@ void ThreadPool::ThreadWorker::operator() () {
 }
 
 void ThreadPool::f_init_() {
-    for(int i = 0; i < static_cast<int>(threads_.size()); i++) {
-            threads_[i] = std::thread(ThreadWorker(*this, i));
+#ifdef THREADPOOL_DEBUG
+    std::cout << "ThreadPool status: " << std::endl;
+    std::cout << "\tThread Number: " << threads_.size() << std::endl;
+    std::cout << "\topen status: " << is_opening_ << std::endl;
+#endif
+    if(is_opening_) {
+        for(int i = 0; i < static_cast<int>(threads_.size()); i++) {
+                threads_[i] = std::thread(ThreadWorker(*this, i));
+        }
     }
 }
 

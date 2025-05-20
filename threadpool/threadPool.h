@@ -1,5 +1,4 @@
 #pragma once
-#include "./safeQueue/safeQueue.h"
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -9,11 +8,14 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+#include <memory>
+
+#include "./safeQueue/safeQueue.h"
 
 class ThreadPool {
 public:
-    ThreadPool(const int& thread_num = 4) : 
-        is_opening_(true), threads_(std::vector<std::thread>(thread_num)) {
+    ThreadPool(const int& thread_num = 4, bool status = true) : 
+        is_opening_(status), threads_(std::vector<std::thread>(thread_num)) {
         f_init_();
     }
     ~ThreadPool() {
@@ -25,7 +27,7 @@ public:
     ThreadPool& operator=(const ThreadPool& other) = delete; // 返回值要是引用，主要和语义有关
     ThreadPool& operator=(ThreadPool&& other) = delete;
 
-    // 核心代码（难点）
+    // 向线程池中提交任务，使用std::future获取该任务的执行情况
     template <class T, class... Args> // 可变参数模板
     // future和线程入口函数的返回值绑定
     // 此处的T&&利用的是模板的通用引用特性（根据上下文自动推导为左值引用或右值引用）
@@ -37,7 +39,7 @@ private:
         ThreadWorker(ThreadPool& pool, int id) : pool_(pool), id_(id) {
             std::cout << "ThreadWorker start, id:" << id << std::endl; 
         }
-        
+
         // 从线程池的任务队列中获取任务并执行
         void operator() ();
     private:

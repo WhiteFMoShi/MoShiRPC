@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "../logFormat/logFormat.h"
+#include "/home/xfy/module/log/logEntry/logFormat/logFormat.h"
 #include "../utils/logLevel.h"
 
 class LogEntry {

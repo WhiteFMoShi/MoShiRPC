@@ -3,6 +3,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstddef>
+#include <map>
 #include <memory>
 #include <vector>
 #include <string>
@@ -15,29 +16,34 @@
 #include "logEntry/logEntry.h"
 #include "logConfig/logConfig.h"
 #include "../threadpool/threadPool.h"
-#include "logFormat/logFormat.h"
+#include "logFileManager/logFileManager.h"
 #include "utils/logLevel.h"
+#include "utils/logQueue.h"
 
 class Log {
 public:
     static Log& getInstance();
 
-    void addLog(LogLevel level, std::string module, const std::string& msg); // 添加要写的日志
-    // void addTask(std::string&&);
+    // 向队列中添加日志条目
+    void addLog(LogLevel level, std::string module, const std::string& msg);
+
+    ~Log();
 private:
-    // 实际处理buffer_
+    // 仿函数
     class LogWriter {
     public:
-        std::future<int> operator()(std::vector<std::string>& buffer_);
+        std::future<bool> operator()(Log& log);
     };
     
-    std::atomic<bool> flag_;
     const LogConfig& log_config_;
+    std::atomic<bool> flag_;
 
-    std::vector<LogEntry> buffer_; // 缓冲队列
-    std::unique_ptr<ThreadPool> pool_; // 智能指针RAII
+    LogQueue buffer_;
+    std::vector<std::future<bool>> pool_;
+    LogFileManager manager_;
+    std::map<std::string, LogFileManager> file_manager_;
 
-    std::mutex mtx_;
+    std::mutex mtx_; // 读锁
     std::condition_variable cv_;
 
 private:

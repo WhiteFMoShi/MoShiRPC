@@ -43,3 +43,7 @@ void LogFileManager::createLogFile() {
         throw std::runtime_error("Log File can't find and create!!!");
     fs.close();
 }
+
+void LogFileManager::write(const LogEntry& entry) {
+    std::cout << "insert logEntry succ!!!" << std::endl;
+}

@@ -10,10 +10,10 @@ LogEntry::LogEntry(LogLevel level, const std::string& module, const std::string&
     date_ = ts.date();
 
     LogFormat fmt;
-    msg_ = fmt.makeLogln(level, module, date_, msg);
+    msg_ = fmt.makeLogln(level, module, ts.now(), msg);
 #ifdef LOGENTRY_DEBUG
     std::cout << "LogEntry's msg is: " << msg_;
-    std::cout << "LogEntry's create time is: " << date() << std::endl;
+    std::cout << "LogEntry's create time is: " << ts.now() << std::endl;
 #endif
 }
 

@@ -11,6 +11,6 @@ public:
     const std::string date() const;
     const std::string getMsg() const;
 private:
-    std::string date_; // 时间信息
-    std::string msg_; // 格式化的，要写入的数据
+    std::string date_; // 时间信息, yyyy_mm_dd
+    std::string msg_; // 格式化的，要写入的数据, 带ln
 };

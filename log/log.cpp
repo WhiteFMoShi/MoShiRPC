@@ -16,6 +16,7 @@ Log& Log::getInstance() {
 }
 
 Log::Log() : log_config_(LogConfig::getConfig()) {
+    flag_ = log_config_.usingThreadpool();
     if(log_config_.usingThreadpool()) {
         pool_.resize(log_config_.threadNumber());
         for(int i = 0; i < log_config_.threadNumber(); i++) {
@@ -39,22 +40,28 @@ Log::~Log() {
 void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
     LogEntry entry(level, module, msg);
     buffer_.push(entry);
+    cv_.notify_one(); // 通知取货
+    std::cout << "Entry add succ!!!" << std::endl;
 }
 
 std::future<bool> Log::LogWriter::operator()(Log& log) {
-    std::cout << "callabe test succ!!!" << std::endl;
     std::packaged_task<bool(Log&)> task([](Log& log) -> bool {
-        while(log.flag_) {
+        std::cout << "callabe test succ!!!" << std::endl;
+
+        while(log.flag_ && !log.buffer_.empty()) {
             std::unique_lock<std::mutex> locker(log.mtx_);
             if(!log.buffer_.empty()) {
                 LogEntry entry = log.buffer_.front_and_pop();
                 locker.unlock();
 
                 // 日志写入（不确定这里要不要再上锁，和filemanager相关的）
-                log.file_manager_[entry.date()].write(entry);
+                log.manager_.writeInFile(entry);
             }
-            else
+            else {
+                std::cout << "waiting" << std::endl;
                 log.cv_.wait(locker); // 阻塞等待通知
+                std::cout << "working" << std::endl;
+            }
         }
         return true;
     });

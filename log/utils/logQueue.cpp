@@ -18,3 +18,8 @@ bool LogQueue::empty() {
     std::lock_guard<std::mutex> locker(mtx_);
     return q_.empty();
 }
+
+int LogQueue::size() {
+    std::lock_guard<std::mutex> locker(mtx_);
+    return q_.size();
+}

@@ -3,15 +3,18 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "log.h"
 #include "logConfig/logConfig.h"
 #include "logEntry/logEntry.h"
 
+// #define LOG_DEBUG
+
 Log& Log::getInstance() {
     static Log log_; // 静态局部变量
-    std::cout << "Log init succ!!!" << std::endl;
+    std::cout << "Log object is initialized successfully!!!" << std::endl;
     return log_;
 }
 
@@ -29,27 +32,48 @@ Log::Log() : log_config_(LogConfig::getConfig()) {
 }
 
 Log::~Log() {
+    flag_ = false; // 关闭
+
     if(log_config_.usingThreadpool()) {
         for(int i = 0; i < log_config_.threadNumber(); i++) {
             pool_[i].get();
         }
-        std::cout << "DisConstruction succ!!!" << std::endl;
+        std::cout << "Log Object is destructed successfully!!!" << std::endl;
     }
 }
 
 void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
+    // std::unique_lock<std::mutex> ready_locker(ready_mtx);
+    // ready_cv.wait(ready_locker, [&]() {
+    //     return ready_count == log_config_.threadNumber();
+    // });
+
     LogEntry entry(level, module, msg);
+    std::lock_guard<std::mutex> locker(mtx_);
     buffer_.push(entry);
-    cv_.notify_one(); // 通知取货
+    cv_.notify_all(); // 通知取货
+
+#ifdef LOG_DEBUG
+    std::cout << "buffer size: " << buffer_.size() << std::endl;
     std::cout << "Entry add succ!!!" << std::endl;
+#endif
 }
 
 std::future<bool> Log::LogWriter::operator()(Log& log) {
     std::packaged_task<bool(Log&)> task([](Log& log) -> bool {
+#ifdef LOG_DEBUG
         std::cout << "callabe test succ!!!" << std::endl;
+#endif
+        // 线程启动后立即递增ready_count
+        // {
+        //     std::lock_guard<std::mutex> ready_lock(log.ready_mtx);
+        //     log.ready_count++;
+        //     log.ready_cv.notify_all();
+        // }
 
-        while(log.flag_ && !log.buffer_.empty()) {
+        while(log.flag_ || !log.buffer_.empty()) {
             std::unique_lock<std::mutex> locker(log.mtx_);
+
             if(!log.buffer_.empty()) {
                 LogEntry entry = log.buffer_.front_and_pop();
                 locker.unlock();
@@ -58,9 +82,11 @@ std::future<bool> Log::LogWriter::operator()(Log& log) {
                 log.manager_.writeInFile(entry);
             }
             else {
-                std::cout << "waiting" << std::endl;
-                log.cv_.wait(locker); // 阻塞等待通知
-                std::cout << "working" << std::endl;
+                // std::cout << "waiting" << std::endl;
+                log.cv_.wait(locker, [&log]() { 
+                    return !log.buffer_.empty() || !log.flag_; 
+                });
+                // std::cout << "working" << std::endl;
             }
         }
         return true;

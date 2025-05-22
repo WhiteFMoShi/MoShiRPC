@@ -45,6 +45,13 @@ private:
     std::mutex mtx_; // 读锁
     std::condition_variable cv_;
 
+    /*
+        确保addLog在所有线程启动之后再添加
+        这样不会出现数据丢失的问题
+    */
+    std::atomic<int> ready_count{0};
+    std::condition_variable ready_cv;
+    std::mutex ready_mtx;
 private:
     Log();
 };

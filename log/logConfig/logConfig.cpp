@@ -11,7 +11,7 @@
 
 #include "logConfig.h"
 
-// #define LOGCONFIG_DEBUG
+#define LOGCONFIG_DEBUG
 
 bool LogConfig::usingThreadpool() const {
     // 不能使用"[]",它是非const的，因为会默认插入被访问但是不存在的键
@@ -38,7 +38,7 @@ LogConfig::LogConfig(std::string conf_dir, std::string configfile_name) {
     workspace_ = getWorkSpace();
     config_file_name_ = configfile_name;
     conf_dir_ = conf_dir;
-    config_file_full_path_ = workspace_ + "/" + conf_dir + "/" + config_file_name_; // log.config路径
+    config_file_full_path_ = workspace_ + conf_dir + "/" + config_file_name_; // log.config路径
 
     setConfig_();
 }

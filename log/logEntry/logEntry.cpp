@@ -3,17 +3,16 @@
 #include "logEntry.h"
 #include "../utils/timeStamp.h"
 
-#define LOGENTRY_DEBUG
+// #define LOGENTRY_DEBUG
 
 LogEntry::LogEntry(LogLevel level, const std::string& module, const std::string& msg) {
-    TimeStamp ts;
-    date_ = ts.date();
+    date_ = TimeStamp::date();
 
     LogFormat fmt;
-    msg_ = fmt.makeLogln(level, module, ts.now(), msg);
+    msg_ = fmt.makeLogln(level, module, TimeStamp::now(), msg);
 #ifdef LOGENTRY_DEBUG
     std::cout << "LogEntry's msg is: " << msg_;
-    std::cout << "LogEntry's create time is: " << ts.now() << std::endl;
+    std::cout << "LogEntry's create time is: " << TimeStamp::now() << std::endl;
 #endif
 }
 

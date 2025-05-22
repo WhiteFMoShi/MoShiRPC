@@ -44,8 +44,10 @@ LogFileManager::LogFileManager() {
 // }
 
 void LogFileManager::writeInFile(const LogEntry& entry) {
+#ifdef LOGFILEMANAGER_DEBUG
     std::cout << "Walk in LogFileManager::writeInFile" << std::endl;
-    std::string log_file = log_dir_ + entry.date();
+#endif
+    std::string log_file = log_dir_ + entry.date() + ".log";
 
     auto it = manager_.find(log_file);
     if(it == manager_.end()) {
@@ -68,9 +70,14 @@ void LogFileManager::writeInFile(const LogEntry& entry) {
 
         std::lock_guard<std::mutex> locker(*mtx_ptr);
         ofs_ptr->open(log_file, std::ios::app);
-        *ofs_ptr << entry.getMsg();
+        if(ofs_ptr->is_open()) {
+            *ofs_ptr << entry.getMsg();
+            ofs_ptr->close();
+        }
+        else
+            throw std::runtime_error("log file open failure in logFileManager::writeInFile");
     }
     else {
-        throw std::runtime_error("log file create failure, please look logFileManager::write!!!");
+        throw std::runtime_error("log file create failure, please look logFileManager::writeInFile!!!");
     }
 }

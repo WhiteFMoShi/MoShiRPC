@@ -13,7 +13,7 @@ public:
     bool usingThreadpool() const;
     // 设定的线程数
     int threadNumber() const;
-    // 日志存储文件夹
+    // 日志存储文件夹（前有'/'）
     std::string logDir() const;
     // 获取makefile所在的目录（默认直接make而不使用-file指定）
     std::string getWorkSpace() const;
@@ -31,9 +31,9 @@ private:
 
     // log具有的配置信息
     std::unordered_map<std::string, std::any> config_ {
-        {"using_threadpool", false},
+        {"using_threadpool", true},
         {"thread_number", 4},
-        {"log_dir_relative_path", std::string("Log")}, // 强制使用string进行存储
+        {"log_dir_relative_path", std::string("/Log")}, // 强制使用string进行存储
     };
 
     // 键顺序（确保文件中默认的、具有相关性的配置信息是相邻的）
@@ -44,7 +44,7 @@ private:
     };
 
 private:
-    LogConfig(std::string conf_dir = "conf", std::string config_file_name = "log.config");
+    LogConfig(std::string conf_dir = "/conf", std::string config_file_name = "log.config");
     LogConfig(LogConfig&&) = delete;
 
     LogConfig operator=(LogConfig&&) = delete;

@@ -10,6 +10,8 @@ class LogQueue {
 public:
     bool empty();
     void push(LogEntry);
+    int size();
+
     LogEntry front_and_pop();
 private:
     std::queue<LogEntry> q_;

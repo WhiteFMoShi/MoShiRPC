@@ -34,14 +34,13 @@ private:
     public:
         std::future<bool> operator()(Log& log);
     };
-    
+
     const LogConfig& log_config_;
     std::atomic<bool> flag_;
 
     LogQueue buffer_;
     std::vector<std::future<bool>> pool_;
     LogFileManager manager_;
-    std::map<std::string, LogFileManager> file_manager_;
 
     std::mutex mtx_; // 读锁
     std::condition_variable cv_;

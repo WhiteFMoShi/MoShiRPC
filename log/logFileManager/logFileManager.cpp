@@ -3,8 +3,11 @@
 #include <ios>
 #include <iostream>
 #include <fstream>
+#include <memory>
+#include <mutex>
 #include <sstream>
 #include <stdexcept>
+#include <tuple>
 
 #include "logFileManager.h"
 #include "../logConfig/logConfig.h"
@@ -23,7 +26,7 @@ LogFileManager::LogFileManager() {
         std::cout << "Log Dir already exist!!!" << std::endl;
 }
 
-void LogFileManager::createLogFile() {
+void LogFileManager::create_log_file_() {
     // 先获取当前时间
     const auto time_p = std::chrono::system_clock().now();
     const time_t time = std::chrono::system_clock::to_time_t(time_p);
@@ -44,6 +47,20 @@ void LogFileManager::createLogFile() {
     fs.close();
 }
 
-void LogFileManager::write(const LogEntry& entry) {
-    std::cout << "insert logEntry succ!!!" << std::endl;
+void LogFileManager::write(std::ofstream& fs, const LogEntry& entry) {
+    auto it = manager_.find(entry.date());
+    if(it != manager_.end()) {
+        auto& [ofs_ptr, mtx_ptr] = it->second;
+
+        std::lock_guard<std::mutex> locker(*mtx_ptr);
+        *ofs_ptr << entry.getMsg();
+    }
+    // 创建一个独特的ofs
+    else {
+        std::shared_ptr<std::ofstream> ofs_ptr;
+        std::shared_ptr<std::mutex> mtx_ptr;
+
+        manager_[entry.date()] = std::make_tuple(ofs_ptr, mtx_ptr);
+        
+    }
 }

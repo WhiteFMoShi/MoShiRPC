@@ -11,7 +11,7 @@
 
 #include "logConfig.h"
 
-#define LOGCONFIG_DEBUG
+// #define LOGCONFIG_DEBUG
 
 bool LogConfig::usingThreadpool() const {
     // 不能使用"[]",它是非const的，因为会默认插入被访问但是不存在的键
@@ -125,7 +125,6 @@ bool LogConfig::setConfig_() {
 
         file_stream.close();
     }
-#ifdef LOGCONFIG_DEBUG
     if(flag) {
         std::cout << "Config file read succ!!!" << std::endl;
     }
@@ -148,7 +147,6 @@ bool LogConfig::setConfig_() {
             std::runtime_error("value type can't match");
         }
     }
-#endif
 
     return flag;
 }

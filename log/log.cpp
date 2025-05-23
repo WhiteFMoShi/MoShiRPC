@@ -1,6 +1,7 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -27,36 +28,47 @@ Log::Log() : log_config_(LogConfig::getConfig()) {
             pool_[i] = f(*this);  // 对象在构造函数执行期间就已经存在了
                                         // 虽然此时Log对象还没完全初始化
                                         // 只要f()不会用到Log还没初始化的部分就没问题
+            std::cout << "Thread " << i << " initial!!!" << std::endl;
         }
     }
 }
 
-Log::~Log() {
-    flag_ = false; // 关闭
-
+void Log::close() {
+    // sleep(1); // 等最后一个日志写入进来
     if(log_config_.usingThreadpool()) {
-        for(int i = 0; i < log_config_.threadNumber(); i++) {
-            pool_[i].get();
+        flag_ = false; // 关闭
+        cv_.notify_all(); // 打破阻塞状态
+        if(log_config_.usingThreadpool()) {
+            for(int i = 0; i < log_config_.threadNumber(); i++) {
+                pool_[i].get();
+            }
+            std::cout << "Log Object is destructed successfully!!!" << std::endl;
         }
-        std::cout << "Log Object is destructed successfully!!!" << std::endl;
+    }
+    else {
+        
     }
 }
 
 void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
-    // std::unique_lock<std::mutex> ready_locker(ready_mtx);
-    // ready_cv.wait(ready_locker, [&]() {
-    //     return ready_count == log_config_.threadNumber();
-    // });
-
-    LogEntry entry(level, module, msg);
-    std::lock_guard<std::mutex> locker(mtx_);
-    buffer_.push(entry);
-    cv_.notify_all(); // 通知取货
+    if(flag_ == false) {
+        throw std::runtime_error("Logger is closed!!!");
+    }
+    if(log_config_.usingThreadpool()) {
+        LogEntry entry(level, module, msg);
+        std::lock_guard<std::mutex> locker(mtx_);
+        buffer_.push(entry);
+        cv_.notify_all(); // 通知取货
 
 #ifdef LOG_DEBUG
-    std::cout << "buffer size: " << buffer_.size() << std::endl;
-    std::cout << "Entry add succ!!!" << std::endl;
+        std::cout << "buffer size: " << buffer_.size() << std::endl;
+        std::cout << "Entry add succ!!!" << std::endl;
 #endif
+    }
+    else {
+        LogEntry entry(level, module, msg);
+        manager_.writeInFile(entry);
+    }
 }
 
 std::future<bool> Log::LogWriter::operator()(Log& log) {
@@ -89,7 +101,7 @@ std::future<bool> Log::LogWriter::operator()(Log& log) {
                 // std::cout << "working" << std::endl;
             }
         }
-        return true;
+        return log.buffer_.empty();
     });
 
     std::shared_ptr<decltype(task)> ptr = std::make_shared<decltype(task)>(std::move(task));

@@ -26,8 +26,8 @@ public:
 
     // 向队列中添加日志条目
     void addLog(LogLevel level, std::string module, const std::string& msg);
+    void close();
 
-    ~Log();
 private:
     // 仿函数
     class LogWriter {

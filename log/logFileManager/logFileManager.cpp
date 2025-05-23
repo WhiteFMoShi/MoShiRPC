@@ -25,6 +25,14 @@ LogFileManager::LogFileManager() {
         std::cout << "Log Dir already exist!!!" << std::endl;
 }
 
+LogFileManager::~LogFileManager() {
+    for(auto& [key, ofs_and_mtx]: manager_) {
+        auto& [ofs, mtx] = ofs_and_mtx;
+        ofs->close();
+    }
+}
+
+
 /*
     直接写入就可以，实际上是不需要创建的
 */
@@ -60,7 +68,7 @@ void LogFileManager::writeInFile(const LogEntry& entry) {
             std::shared_ptr<std::mutex> mtx_ptr = std::make_shared<std::mutex>();
             manager_[log_file] = std::make_tuple(ofs_ptr, mtx_ptr);
 
-            std::cout << "Log File create succ!!!" << std::endl;
+            std::cout << "Log File: " << log_file << " create succ!!!" << std::endl;
         }
     }
 
@@ -69,13 +77,10 @@ void LogFileManager::writeInFile(const LogEntry& entry) {
         auto& [ofs_ptr, mtx_ptr] = it->second;
 
         std::lock_guard<std::mutex> locker(*mtx_ptr);
-        ofs_ptr->open(log_file, std::ios::app);
-        if(ofs_ptr->is_open()) {
-            *ofs_ptr << entry.getMsg();
-            ofs_ptr->close();
+        if(!ofs_ptr->is_open()) {
+            ofs_ptr->open(log_file, std::ios::app);
         }
-        else
-            throw std::runtime_error("log file open failure in logFileManager::writeInFile");
+        *ofs_ptr << entry.getMsg();
     }
     else {
         throw std::runtime_error("log file create failure, please look logFileManager::writeInFile!!!");

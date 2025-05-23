@@ -13,6 +13,9 @@ class LogFileManager {
 public:
     // 构造日志路径
     LogFileManager();
+    
+    ~LogFileManager();
+
 
     void writeInFile(const LogEntry&);
 private:

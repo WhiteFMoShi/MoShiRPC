@@ -1,26 +1,36 @@
 # 大纲
-[简介](#modules)
+👉 [简介](#modules)
 
-[线程池ThreadPool](#threadpool)
+👉 [线程池ThreadPool](#threadpool)
 
-# Modules简介
-这是一个学习仓库，用于学习各类基础组件和对于本人不熟悉的C++语法进行补充学习。
+👉 [日志Log](#log)
 
-### 项目文件命名说明
-- ``module``项目文件使用**小驼峰命名法**
-- 项目中测试代码和与示例代码使用**蛇形命名法**
-- 组件实现文件使用**小驼峰命名法**
+# Modules目录
+## ThreadPool
+[线程池](./Note/线程池.md)组件，其中包含两个重要模块：
+- 安全的任务队列（可以更改为无锁队列的版本）
+- 线程池本体
 
-# ThreadPool
-线程池组件，其中包含两个重要模块：
-- 安全队列（可以更改为无锁队列的版本）
-- 线程池
+实现起来的难度不高，但是很实用。
 
-[线程池笔记](./threadpool/%20线程池.md)
+## Log
+一个高效、简单易用的[日志类](./Note/日志模块.md)
 
-# Log
-希望实现一个高可用的、综合的日志库，设计目标于Note中阐述。
+### Log架构设计
+![设计阐述](./srceenshot/log_construction_design.png)
 
-Log模块：
-- LogConfig: 复制Log类的配置，默认从log.config中读取配置信息
-- LogFormat: Log记录时的格式信息配置
+### 性能测试
+测试代码：[bench](./log/bench/)，实际上我觉得测不太出🤣
+
+|写入方式|QPS|
+|:-:|:-:|
+|同步写入|676,589条/秒|
+|异步写入(2线程)|325892条/秒|
+
+1. 同步写入测试（单线程）：
+![sync_write](./srceenshot/sync_write.png)
+
+2. 异步写入测试（2线程）：
+![async_write](./srceenshot/async_write.png)
+
+在线程同步上的开销还是有点大，我试图更换无锁队列，实际上速度没有什么改变，我的瓶颈应该是在线程同步中。

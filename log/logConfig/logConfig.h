@@ -31,14 +31,14 @@ private:
 
     // log具有的配置信息
     std::unordered_map<std::string, std::any> config_ {
-        {"using_threadpool", true},
+        {"asynchronous", true},
         {"thread_number", 4},
         {"log_dir_relative_path", std::string("/Log")}, // 强制使用string进行存储
     };
 
     // 键顺序（确保文件中默认的、具有相关性的配置信息是相邻的）
     std::vector<std::string> sequence_ {
-        "using_threadpool",
+        "asynchronous",
         "thread_number",
         "log_dir_relative_path"
     };

@@ -17,7 +17,7 @@ bool LogConfig::usingThreadpool() const {
     // 不能使用"[]",它是非const的，因为会默认插入被访问但是不存在的键
     // 此处需要使用at，因为at不存在这一点，它只是一个访问器，并且它具有越界检查
     // 我有一个at包装器(keyToValue)
-    return std::any_cast<bool>(keyToValue_("using_threadpool"));
+    return std::any_cast<bool>(keyToValue_("asynchronous"));
 }
 
 int LogConfig::threadNumber() const {

@@ -1,0 +1,22 @@
+# 定义子模块名称
+set(MODULE_NAME log_module)
+
+# 收集所有头文件路径
+set(${MODULE_NAME}_INCLUDE_DIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/logConfig
+    ${CMAKE_CURRENT_SOURCE_DIR}/logEntry
+    ${CMAKE_CURRENT_SOURCE_DIR}/logEntry/logFormat
+    ${CMAKE_CURRENT_SOURCE_DIR}/logFileManager
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+    CACHE INTERNAL "${MODULE_NAME}: Include directories"
+)
+
+# 收集所有源文件
+file(GLOB_RECURSE ${MODULE_NAME}_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+)
+
+# 向主项目提供接口
+set(${MODULE_NAME}_INCLUDE_DIRS ${${MODULE_NAME}_INCLUDE_DIRS} PARENT_SCOPE)
+set(${MODULE_NAME}_SOURCES ${${MODULE_NAME}_SOURCES} PARENT_SCOPE)

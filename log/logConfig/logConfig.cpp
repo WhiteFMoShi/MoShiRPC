@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "logConfig.h"
+#include "logConfig.hpp"
 
 // #define LOGCONFIG_DEBUG
 

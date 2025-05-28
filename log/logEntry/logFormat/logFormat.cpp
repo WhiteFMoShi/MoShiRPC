@@ -1,7 +1,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "logFormat.h"
+#include "logFormat.hpp"
 
 // #define LOGFORMAT_DEBUG
 

@@ -1,0 +1,19 @@
+# 定义项目名称
+project(ThreadPoolModule)
+
+# 收集头文件路径
+set(THREADPOOL_INCLUDE_DIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/safeQueue
+    CACHE INTERNAL "ThreadPool: Include directories"
+)
+
+# 收集源文件
+file(GLOB_RECURSE THREADPOOL_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/safeQueue/*.cpp
+)
+
+# 向父作用域传递信息
+set(THREADPOOL_INCLUDE_DIRS ${THREADPOOL_INCLUDE_DIRS} PARENT_SCOPE)
+set(THREADPOOL_SOURCES ${THREADPOOL_SOURCES} PARENT_SCOPE)

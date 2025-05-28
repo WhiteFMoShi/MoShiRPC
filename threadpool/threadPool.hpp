@@ -2,15 +2,12 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
-#include <memory>
 #include <mutex>
 #include <thread>
-#include <utility>
 #include <vector>
 #include <iostream>
-#include <memory>
 
-#include "./safeQueue/safeQueue.h"
+#include "./safeQueue/safeQueue.hpp"
 
 class ThreadPool {
 public:
@@ -77,5 +74,3 @@ auto ThreadPool::submit(T&& func, Args&& ...args) -> std::future<decltype(func(a
     cv_.notify_one(); // 唤醒一个休眠的线程
     return task_ptr->get_future();
 }
-
-

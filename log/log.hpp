@@ -13,12 +13,10 @@
 #include <condition_variable>
 #include <vector>
 
-#include "logEntry/logEntry.h"
-#include "logConfig/logConfig.h"
-#include "../threadpool/threadPool.h"
-#include "logFileManager/logFileManager.h"
-#include "utils/logLevel.h"
-#include "utils/logQueue.h"
+#include "logConfig/logConfig.hpp"
+#include "logFileManager/logFileManager.hpp"
+#include "utils/logLevel.hpp"
+#include "utils/logQueue.hpp"
 
 class Log {
 public:

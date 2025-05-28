@@ -6,10 +6,11 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include <iostream>
 
-#include "log.h"
-#include "logConfig/logConfig.h"
-#include "logEntry/logEntry.h"
+#include "log.hpp"
+#include "logConfig/logConfig.hpp"
+#include "logEntry/logEntry.hpp"
 
 // #define LOG_DEBUG
 

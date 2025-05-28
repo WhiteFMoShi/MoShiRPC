@@ -1,10 +1,11 @@
-#include "../log.h"
 #include <chrono>
 #include <atomic>
 #include <future>
 #include <unistd.h>
 #include <vector>
 #include <iostream>
+
+#include "../log.hpp"
 
 void test_log_performance() {
     Log& logger = Log::getInstance();

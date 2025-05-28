@@ -1,7 +1,8 @@
 #include <string>
 
-#include "logEntry.h"
-#include "../utils/timeStamp.h"
+#include "logEntry.hpp"
+#include "../utils/timeStamp.hpp"
+#include "logFormat/logFormat.hpp"
 
 // #define LOGENTRY_DEBUG
 

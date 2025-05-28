@@ -1,13 +1,7 @@
-# 忽略所有Debug文件
-**/Debug
-
-# 忽略根目录下的测试文件
-main
-main.cpp
-makefile
-log.config
-conf
-Log
+# 忽略编译器配置和缓存文件
+**/.cache
+**/.vscode
 
 # 忽略所有测试代码
 **/test*
+**/build

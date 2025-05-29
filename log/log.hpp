@@ -2,21 +2,17 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <cstddef>
-#include <map>
-#include <memory>
 #include <vector>
 #include <string>
-#include <queue>
 #include <mutex>
 #include <future>
 #include <condition_variable>
 #include <vector>
 
-#include "logConfig/logConfig.hpp"
-#include "logFileManager/logFileManager.hpp"
-#include "utils/logLevel.hpp"
-#include "utils/logQueue.hpp"
+#include "log_config/log_config.hpp"
+#include "log_file_manager/log_file_manager.hpp"
+#include "utils/log_level.hpp"
+#include "utils/log_queue.hpp"
 
 class Log {
 public:

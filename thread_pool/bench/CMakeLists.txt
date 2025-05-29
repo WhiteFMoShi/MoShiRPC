@@ -13,7 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra)
 
 # 源文件列表
-set(SRCS example.cpp ../threadPool.cpp)
+set(SRCS example.cpp ../thread_pool.cpp)
 
 # 可执行文件
 set(OBJ example)

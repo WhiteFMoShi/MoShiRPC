@@ -7,7 +7,7 @@
 #include <vector>
 #include <iostream>
 
-#include "./safeQueue/safeQueue.hpp"
+#include "./safe_queue/safe_queue.hpp"
 
 class ThreadPool {
 public:

@@ -16,13 +16,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
 set(DIR "/home/xfy/module/log")
 set(SRC
     ${DIR}/bench/bench.cpp
-    ${DIR}/logConfig/logConfig.cpp
-    ${DIR}/logEntry/logFormat/logFormat.cpp
-    ${DIR}/logFileManager/logFileManager.cpp
-    ${DIR}/utils/timeStamp.cpp
-    ${DIR}/logEntry/logEntry.cpp
+    ${DIR}/log_config/log_config.cpp
+    ${DIR}/log_entry/log_format/log_format.cpp
+    ${DIR}/log_file_manager/log_file_manager.cpp
+    ${DIR}/utils/time_stamp.cpp
+    ${DIR}/log_entry/log_entry.cpp
     ${DIR}/log.cpp
-    ${DIR}/utils/logQueue.cpp
+    ${DIR}/utils/log_queue.cpp
 )
 
 # 添加可执行文件

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "../utils/logLevel.hpp"
+#include "../utils/log_level.hpp"
 
 class LogEntry {
 public:

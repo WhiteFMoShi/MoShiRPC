@@ -8,8 +8,8 @@
 #include <stdexcept>
 #include <tuple>
 
-#include "logFileManager.hpp"
-#include "../logConfig/logConfig.hpp"
+#include "log_file_manager.hpp"
+#include "../log_config/log_config.hpp"
 
 // #define LOGFILEMANAGER_DEBUG
 

@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../threadPool.hpp"
+#include "../thread_pool.hpp"
 
 int task(int a, int b) {
     return a + b;

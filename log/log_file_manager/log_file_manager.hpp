@@ -6,7 +6,7 @@
 #include <mutex>
 #include <string>
 
-#include "../logEntry/logEntry.hpp"
+#include "../log_entry/log_entry.hpp"
 
 
 class LogFileManager {

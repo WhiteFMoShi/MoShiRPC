@@ -9,8 +9,8 @@
 #include <iostream>
 
 #include "log.hpp"
-#include "logConfig/logConfig.hpp"
-#include "logEntry/logEntry.hpp"
+#include "log_config/log_config.hpp"
+#include "log_entry/log_entry.hpp"
 
 // #define LOG_DEBUG
 

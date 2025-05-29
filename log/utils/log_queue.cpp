@@ -24,7 +24,7 @@
 //     return q_.size();
 // }
 
-#include "logQueue.hpp"
+#include "log_queue.hpp"
 #include <stdexcept>
 
 // 检查队列是否为空

@@ -1,13 +1,15 @@
+cmake_minimum_required(VERSION 3.10)
+
 # 定义子模块名称
 set(MODULE_NAME log_module)
 
 # 收集所有头文件路径
 set(${MODULE_NAME}_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/logConfig
-    ${CMAKE_CURRENT_SOURCE_DIR}/logEntry
-    ${CMAKE_CURRENT_SOURCE_DIR}/logEntry/logFormat
-    ${CMAKE_CURRENT_SOURCE_DIR}/logFileManager
+    ${CMAKE_CURRENT_SOURCE_DIR}/log_config
+    ${CMAKE_CURRENT_SOURCE_DIR}/log_entry
+    ${CMAKE_CURRENT_SOURCE_DIR}/log_entry/log_format
+    ${CMAKE_CURRENT_SOURCE_DIR}/log_file_manager
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     CACHE INTERNAL "${MODULE_NAME}: Include directories"
 )

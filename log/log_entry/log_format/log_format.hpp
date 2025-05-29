@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-#include "../../utils/logLevel.hpp"
+#include "../../utils/log_level.hpp"
 
 class LogFormat {
 public:

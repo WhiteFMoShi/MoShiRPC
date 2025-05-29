@@ -23,7 +23,7 @@
 #include <mutex>
 #include <queue>
 
-#include "../log_entry/log_entry.hpp"
+#include "entry/log_entry.hpp"
 
 // 线程安全队列
 class LogQueue {

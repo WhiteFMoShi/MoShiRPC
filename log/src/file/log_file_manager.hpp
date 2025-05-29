@@ -6,7 +6,7 @@
 #include <mutex>
 #include <string>
 
-#include "../log_entry/log_entry.hpp"
+#include "entry/log_entry.hpp"
 
 
 class LogFileManager {
@@ -24,7 +24,4 @@ private:
 
     using LogFilePath = std::string;
     std::map<LogFilePath, std::tuple<std::shared_ptr<std::ofstream>, std::shared_ptr<std::mutex>>> manager_; // 其中的数据如何进行管理？何时进行删除？不能一直膨胀
-
-    // 创建当天的日志文件（根据要输出的日志的时间戳来）
-    // void create_log_file_(const LogEntry& entry);
 };

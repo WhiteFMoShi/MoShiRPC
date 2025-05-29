@@ -5,7 +5,7 @@
 #include <vector>
 #include <iostream>
 
-#include "../log.hpp"
+#include "log.hpp"
 
 void test_log_performance() {
     Log& logger = Log::getInstance();

@@ -1,24 +1,27 @@
-cmake_minimum_required(VERSION 3.10)
+project(log LANGUAGES CXX)
 
-# 定义子模块名称
-set(MODULE_NAME log_module)
-
-# 收集所有头文件路径
-set(${MODULE_NAME}_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/log_config
-    ${CMAKE_CURRENT_SOURCE_DIR}/log_entry
-    ${CMAKE_CURRENT_SOURCE_DIR}/log_entry/log_format
-    ${CMAKE_CURRENT_SOURCE_DIR}/log_file_manager
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils
-    CACHE INTERNAL "${MODULE_NAME}: Include directories"
+# 关键修改1：添加所有头文件路径
+add_library(log
+    src/log.cpp
+    src/config/log_config.cpp
+    src/entry/log_entry.cpp
+    src/entry/format/log_format.cpp
+    src/file/log_file_manager.cpp
+    src/utils/log_queue.cpp
+    src/utils/time_stamp.cpp
 )
 
-# 收集所有源文件
-file(GLOB_RECURSE ${MODULE_NAME}_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+# 关键修改2：完整包含路径配置
+target_include_directories(log PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>  # 必须添加src目录
+    $<INSTALL_INTERFACE:include>
 )
 
-# 向主项目提供接口
-set(${MODULE_NAME}_INCLUDE_DIRS ${${MODULE_NAME}_INCLUDE_DIRS} PARENT_SCOPE)
-set(${MODULE_NAME}_SOURCES ${${MODULE_NAME}_SOURCES} PARENT_SCOPE)
+# 关键修改3：显式声明内部依赖关系
+target_link_libraries(log PRIVATE
+    file
+    entry
+    utils
+    config
+)

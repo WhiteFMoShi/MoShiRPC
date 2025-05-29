@@ -9,8 +9,8 @@
 #include <condition_variable>
 #include <vector>
 
-#include "log_config/log_config.hpp"
-#include "log_file_manager/log_file_manager.hpp"
+#include "config/log_config.hpp"
+#include "file/log_file_manager.hpp"
 #include "utils/log_level.hpp"
 #include "utils/log_queue.hpp"
 

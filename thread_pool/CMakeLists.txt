@@ -1,28 +1,15 @@
-cmake_minimum_required(VERSION 3.15)
-project(ThreadPool LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.10)
+project(thread_pool LANGUAGES CXX)
 
-# 全局设置
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# 关键修改：仅添加实际存在的源文件
+# 创建线程池库
 add_library(thread_pool
-    src/thread_pool.cpp  # 仅包含有实现的.cpp文件
-    # 注意：safe_queue.hpp 是头文件模板，不应添加到add_library中
+    src/thread_pool.cpp
+    src/safe_queue.hpp
+    include/thread_pool.hpp
 )
 
-# 完整包含路径配置
+# 配置包含路径 - 确保clangd能找到所有头文件
 target_include_directories(thread_pool PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>  # 必须添加src目录
-    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>  # 添加src目录确保内部头文件可见
 )
-
-# 安装规则
-install(TARGETS thread_pool
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-install(FILES include/thread_pool.hpp DESTINATION include)

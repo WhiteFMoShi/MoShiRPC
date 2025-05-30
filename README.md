@@ -1,3 +1,6 @@
+# Tutorial
+[CMake上手教程](https://cmake-doc.readthedocs.io/zh-cn/latest/guide/tutorial/index.html)
+
 # 大纲
 👉 [简介](#modules)
 
@@ -16,10 +19,10 @@
 ## Log
 一个高效、简单易用的[日志类](./Note/日志模块.md)
 
-### Log架构设计
+### 💡Log架构设计
 ![设计阐述](./srceenshot/log_construction_design.png)
 
-### 性能测试
+### 🚀性能测试
 测试代码：[bench](./log/bench/)，实际上我觉得测不太出🤣
 
 |写入方式|QPS|
@@ -32,5 +35,3 @@
 
 2. 异步写入测试（2线程）：
 ![async_write](./srceenshot/async_write.png)
-
-在线程同步上的开销还是有点大，我试图更换无锁队列，实际上速度没有什么改变，我的瓶颈应该是在线程同步中。

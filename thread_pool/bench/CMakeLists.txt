@@ -1,40 +1,23 @@
-# 要求的 CMake 最低版本
-cmake_minimum_required(VERSION 3.10)
-
-# 项目名称
-project(ThreadPoolBench)
-
-# 设置 C++ 标准
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# 添加编译选项，相当于 Makefile 中的 -Wall -Wextra
-add_compile_options(-Wall -Wextra)
-
-# 源文件列表
-set(SRCS example.cpp ../thread_pool.cpp)
-
-# 可执行文件
-set(OBJ example)
-
-# 设置可执行文件输出目录为项目根目录的 build 目录
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build)
-
-# 生成可执行文件
-add_executable(${OBJ} ${SRCS})
-
-# 在可执行文件构建完成后立即运行
-add_custom_command(TARGET ${OBJ} POST_BUILD
-    COMMAND ${EXECUTABLE_OUTPUT_PATH}/${OBJ}
-    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+# 创建可执行文件，直接包含所有需要的源文件
+add_executable(example
+    example.cpp                  # 主程序文件
+    ${CMAKE_SOURCE_DIR}/../src/thread_pool.cpp  # 线程池实现
+    ${CMAKE_SOURCE_DIR}/../src/safe_queue.hpp   # 内部头文件依赖
 )
 
-# 定义清理目标，类似于 Makefile 中的 clean 目标
-add_custom_target(clean-all
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${EXECUTABLE_OUTPUT_PATH}/${OBJ}
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${EXECUTABLE_OUTPUT_PATH}/*.cmake
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${EXECUTABLE_OUTPUT_PATH}/CMakeCache.txt
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${EXECUTABLE_OUTPUT_PATH}/CMakeFiles
-    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+# 设置包含路径
+target_include_directories(example PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include  # thread_pool.hpp
+    ${CMAKE_SOURCE_DIR}/../src     # safe_queue.hpp
 )
+
+# 添加自动运行目标（make后直接执行）
+add_custom_target(run_all
+    COMMAND ${CMAKE_COMMAND} -E echo "Running example..."
+    COMMAND ./example
+    DEPENDS example
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+# 设置为默认目标（输入make时自动构建并运行）
+set_target_properties(run_all PROPERTIES EXCLUDE_FROM_ALL FALSE)

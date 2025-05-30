@@ -1,19 +1,28 @@
-# 定义项目名称
-project(ThreadPoolModule)
+cmake_minimum_required(VERSION 3.15)
+project(ThreadPool LANGUAGES CXX)
 
-# 收集头文件路径
-set(THREADPOOL_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/safeQueue
-    CACHE INTERNAL "ThreadPool: Include directories"
+# 全局设置
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 关键修改：仅添加实际存在的源文件
+add_library(thread_pool
+    src/thread_pool.cpp  # 仅包含有实现的.cpp文件
+    # 注意：safe_queue.hpp 是头文件模板，不应添加到add_library中
 )
 
-# 收集源文件
-file(GLOB_RECURSE THREADPOOL_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/safeQueue/*.cpp
+# 完整包含路径配置
+target_include_directories(thread_pool PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>  # 必须添加src目录
+    $<INSTALL_INTERFACE:include>
 )
 
-# 向父作用域传递信息
-set(THREADPOOL_INCLUDE_DIRS ${THREADPOOL_INCLUDE_DIRS} PARENT_SCOPE)
-set(THREADPOOL_SOURCES ${THREADPOOL_SOURCES} PARENT_SCOPE)
+# 安装规则
+install(TARGETS thread_pool
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+)
+install(FILES include/thread_pool.hpp DESTINATION include)

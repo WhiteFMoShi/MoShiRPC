@@ -9,7 +9,7 @@
 
 void test_log_performance() {
     Log& logger = Log::getInstance();
-    constexpr int PRODUCER_THREADS = 4; // 生产者线程数量
+    constexpr int PRODUCER_THREADS = 2; // 生产者线程数量
     constexpr int LOGS_PER_THREAD = 500000;
     std::atomic<int> counter{0};
 

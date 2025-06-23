@@ -4,7 +4,8 @@
 #include <string>
 
 // #include "../../utils/log_level.hpp"
-#include "utils/log_level.hpp"
+// #include "utils/log_level.hpp"
+#include "log.hpp"
 
 
 class LogFormat {

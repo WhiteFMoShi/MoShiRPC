@@ -10,6 +10,7 @@
 #include <string>
 
 #include "log_config.hpp"
+#include "cJSON/cJSON.h"
 
 // #define LOGCONFIG_DEBUG
 

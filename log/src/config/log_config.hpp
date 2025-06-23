@@ -30,7 +30,7 @@ private:
 
     // log具有的配置信息
     std::unordered_map<std::string, std::any> config_ {
-        {"asynchronous", true},
+        {"asynchronous", false},
         {"thread_number", 4},
         {"log_dir_relative_path", std::string("/Log")}, // 强制使用string进行存储
     };

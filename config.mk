@@ -8,5 +8,3 @@ INCLUDE_PATH := -Isrc -Iinclude -I$(SDK_PATH)
 
 CXX := g++
 CXXFLAGS := -Wall -O3 $(INCLUDE_PATH) -g
-
-export CXX CXXFLAGS BIN_PATH LIBS_PATH

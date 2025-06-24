@@ -1,12 +1,28 @@
 include config.mk
 
-construct:
+MOUDLES = cJSON log threadpool
+
+all: build
+
+########### submodules compile ############
+compile_SDK:
 	cd SDK && . ./construction.sh
 
-build: construct
-	-mkdir -p $(BIN_PATH) $(LIBS_PATH)
-	cp SDK/cJSON/libcjson.a lib/libcjson.a # 库拷贝
+compile_log:
+	cd log && $(MAKE)
 
-.PHONY: clean
+compile_threadpool:
+	cd thread_pool && $(MAKE)
+
+########### global construction ############
+build: compile_SDK compile_log compile_threadpool
+	mkdir -p $(BIN_PATH) $(LIBS_PATH)
+	cp $(SDK_PATH)/cJSON/libcjson.a $(LIBS_PATH)/libcjson.a
+	cp log/liblog.a $(LIBS_PATH)/liblog.a
+	cp thread_pool/libthreadpool.a $(LIBS_PATH)/libthreadpool.a
+
+.PHONY: clean build
 clean:
-	@cd SDK && $(MAKE) clean
+	rm -rf build
+	cd log && $(MAKE) clean
+	cd thread_pool && $(MAKE) clean

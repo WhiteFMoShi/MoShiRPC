@@ -1,5 +1,5 @@
 # 任务清单
-[To Do List](TODO.md)
+<font color="red"><b>点击链接跳转查看[TODO List](TODO.md)！！！欢迎issue和pr！！！</b></font>
 
 # 大纲
 👉 [tutorial](#tutorial)
@@ -10,23 +10,33 @@
 
 👉 [日志Log](#log)
 
-# Tutorial
-[CMake上手教程](https://cmake-doc.readthedocs.io/zh-cn/latest/guide/tutorial/index.html)
+# Previous Tutorials
+### Tools Tutorials
+[CMake官方教程](https://cmake-doc.readthedocs.io/zh-cn/latest/guide/tutorial/index.html)
+[Makefile快速教程](https://makefiletutorial.com/#getting-started)
+[git commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)
+[Doxygen注释]()
+
+### Contexts Tutorials
+[C++ 网络编程]()
+[muduo]()
 
 # Modules目录
-## ThreadPool
-[线程池](Note/线程池.md)组件，其中包含两个重要模块：
-- 安全的任务队列（可以更改为无锁队列的版本）
-- 线程池本体
 
-## Log
-一个高效、简单易用的[日志类](Note/日志模块.md)
+## third_party
+<font color="red"><b>所有外部库文件的下载、编译无需手动，在项目根目录下执行`make third_party`即可。</b></font>
 
-### 💡Log架构设计
+使用[cJson](https://github.com/DaveGamble/cJSON)库作为本项目的Json生成、解析，`construction.sh`会完成自动的下载、编译操作。
+
+### Log
+一个高效、简单易用的[日志类](Note/日志模块.md)。
+预期使用Json对类行为进行配置
+
+#### 💡Log架构设计
 ![设计阐述](srceenshot/log_construction_design.png)
 
-### 🚀性能测试
-测试代码：[bench](log/bench/)，实际上我觉得测不太出🤣
+#### 🚀性能测试
+测试代码：[bench](log/bench/bench.cpp)，实际上我觉得测不太出🤣
 
 |写入方式|QPS|
 |:--|:--|

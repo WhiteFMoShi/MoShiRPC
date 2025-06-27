@@ -8,7 +8,6 @@
 
 #include "entry/log_entry.hpp"
 
-
 class LogFileManager {
 public:
     // 构造日志路径
@@ -16,10 +15,9 @@ public:
     
     ~LogFileManager();
 
-
     void writeInFile(const LogEntry&);
 private:
-    std::string log_dir_;// 末尾带有"/"
+    std::string log_dir_; // 末尾带有"/"
     std::mutex manager_mtx;
 
     using LogFilePath = std::string;

@@ -1,10 +1,9 @@
 #pragma once
 
-// 用于动态库的API导出 但是不知道实际上的效果如何
-// #define  __attribute__((visibility("default")))
-
 #include <string>
 #include <memory>
+
+namespace MoShi {
 
 enum class LogLevel : int {
     Debug = 1,
@@ -40,4 +39,4 @@ private:
     Log();
 };
 
-#define Debug(module, msg) void addLog(LogLevel::Debug, module, msg);
+} // namespace MoShi

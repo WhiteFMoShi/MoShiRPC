@@ -3,6 +3,8 @@
 
 #include "log_format.hpp"
 
+using namespace MoShi;
+
 // #define LOGFORMAT_DEBUG
 
 std::string LogFormat::makeLog(LogLevel level, const std::string& module, const std::string& time, const std::string& msg) {

@@ -12,6 +12,8 @@
 #include "file/log_file_manager.hpp"
 #include "utils/log_queue.hpp"
 
+using namespace MoShi;
+
 // #define LOG_DEBUG
 
 Log& Log::getInstance() {
@@ -64,7 +66,7 @@ std::future<bool> Log::Impl::LogWriter::operator()(Log& log) {
 #ifdef LOG_DEBUG
                 impl.debug("Writing entry: " + entry.message);
 #endif
-                
+
                 impl.manager_.writeInFile(entry);
             } else {
                 #ifdef LOG_DEBUG
@@ -88,7 +90,6 @@ std::future<bool> Log::Impl::LogWriter::operator()(Log& log) {
     
     return task_ptr->get_future();
 }
-
 
 Log::Log() : pimpl_(std::make_unique<Impl>()) {
     pimpl_->flag_ = pimpl_->log_config_.usingThreadpool();

@@ -7,7 +7,7 @@
 class LogEntry {
 public:
     LogEntry() = default;
-    LogEntry(LogLevel level, const std::string& module, const std::string& msg);
+    LogEntry(MoShi::LogLevel level, const std::string& module, const std::string& msg);
     const std::string date() const;
     const std::string getMsg() const;
 private:

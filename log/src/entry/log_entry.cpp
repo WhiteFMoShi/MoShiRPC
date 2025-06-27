@@ -4,6 +4,8 @@
 #include "utils/time_stamp.hpp"
 #include "format/log_format.hpp"
 
+using namespace MoShi;
+
 // #define LOGENTRY_DEBUG
 
 LogEntry::LogEntry(LogLevel level, const std::string& module, const std::string& msg) {

@@ -32,25 +32,6 @@ LogFileManager::~LogFileManager() {
     }
 }
 
-
-/*
-    直接写入就可以，实际上是不需要创建的
-*/
-// void LogFileManager::create_log_file_(const LogEntry& entry) {
-
-//     std::string filename(entry.date() + ".log");
-
-// #ifdef LOGFILEMANAGER_DEBUG
-//     std::cout << "Today's Log file name is: "<< filename << std::endl;
-//     std::cout << "The full path is: " << log_dir_  + filename << std::endl;
-// #endif
-//     std::fstream fs;
-//     fs.open(log_dir_ + filename, std::ios::app);
-//     if(!fs.is_open())
-//         throw std::runtime_error("Log File can't find and create!!!");
-//     fs.close();
-// }
-
 void LogFileManager::writeInFile(const LogEntry& entry) {
 #ifdef LOGFILEMANAGER_DEBUG
     std::cout << "Walk in LogFileManager::writeInFile" << std::endl;

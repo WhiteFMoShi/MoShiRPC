@@ -1,8 +1,8 @@
 #include <string>
 
 #include "log_entry.hpp"
-#include "utils/time_stamp.hpp"
-#include "format/log_format.hpp"
+#include "time_stamp.hpp"
+#include "log_format.hpp"
 
 using namespace MoShi;
 

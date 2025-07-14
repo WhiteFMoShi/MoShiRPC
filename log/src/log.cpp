@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "log.hpp"
-#include "config/log_config.hpp"
-#include "file/log_file_manager.hpp"
-#include "utils/log_queue.hpp"
+#include "log_config.hpp"
+#include "log_file_manager.hpp"
+#include "log_queue.hpp"
 
 using namespace MoShi;
 
@@ -19,6 +19,7 @@ using namespace MoShi;
 Log& Log::getInstance() {
     static Log log_;
     std::cout << "creating log instance..." << std::endl;
+    log_.addLog(LogLevel::Info, "LOG", "Logger init...");
     return log_;
 }
 
@@ -126,6 +127,8 @@ void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
 }
 
 void Log::close() {
+    addLog(LogLevel::Info, "LOG", "logger is destoried...");
+    // 若是使用了线程池就清理线程池中的所有条目
     if (pimpl_->log_config_.usingThreadpool()) {
         pimpl_->flag_ = false;
         pimpl_->cv_.notify_all();
@@ -135,4 +138,9 @@ void Log::close() {
         pimpl_->debug("Log closed successfully");
 #endif
     }
+}
+
+Log::~Log() {
+    close();
+    std::cout << "log instance was destory!" << std::endl;
 }

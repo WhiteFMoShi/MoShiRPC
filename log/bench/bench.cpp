@@ -7,6 +7,8 @@
 
 #include "log.hpp"
 
+using namespace MoShi;
+
 void test_log_performance() {
     Log& logger = Log::getInstance();
     constexpr int PRODUCER_THREADS = 2; // 生产者线程数量
@@ -40,7 +42,7 @@ void test_log_performance() {
     }
 
     // 结束阶段
-    logger.close();
+    // logger.close(); // 想要测试需要更改源代码，将close函数暴露
 
     auto end = std::chrono::high_resolution_clock::now();
 

@@ -9,7 +9,7 @@
 #include <tuple>
 
 #include "log_file_manager.hpp"
-#include "config/log_config.hpp"
+#include "log_config.hpp"
 
 // #define LOGFILEMANAGER_DEBUG
 

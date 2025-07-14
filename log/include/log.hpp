@@ -22,14 +22,10 @@ public:
     * @param level The entry Level, can checking in LogLevel.
     * @param module which module add this entry.
     * @param msg The message of this entry.
+    * @exception When calling addLog after using close(), it will throw out a std::runtimeerror.
+                 It may happen Sin multiple-threads enviorment.
     */
     void addLog(LogLevel level, std::string module, const std::string& msg);
-    
-    /**
-    * @brief Close the threadpool, cleaning all entry in queue.
-    * @warning This function shouldn't called derictly, because the open function haven't implement.
-    */
-    void close();
 
 private:
     // PIMPL 封装
@@ -37,6 +33,13 @@ private:
     std::unique_ptr<Impl> pimpl_;
 private:
     Log();
+    ~Log();
+
+    /**
+    * @brief Close the threadpool, cleaning all entry in queue.
+    * @warning This function shouldn't called derictly, because the open function haven't implement.
+    */
+    void close();
 };
 
 } // namespace MoShi

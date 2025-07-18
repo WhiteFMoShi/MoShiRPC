@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <vector>
 
+#include "time_stamp.hpp"
 #include "log.hpp"
 #include "log_config.hpp"
 #include "log_file_manager.hpp"
@@ -15,6 +16,13 @@
 using namespace MoShi;
 
 // #define LOG_DEBUG
+
+const std::string Log::COLOR_DEBUG = "\033[34m";
+const std::string Log::COLOR_INFO = "\033[32m";
+const std::string Log::COLOR_WARNING = "\033[33m";
+const std::string Log::COLOR_ERROR = "\033[31m";
+const std::string Log::COLOR_CRITICAL = "\033[1;5;31m";
+const std::string Log::COLOR_RESET = "\033[0m";
 
 Log& Log::getInstance() {
     static Log log_;
@@ -93,7 +101,7 @@ std::future<bool> Log::Impl::LogWriter::operator()(Log& log) {
 }
 
 Log::Log() : pimpl_(std::make_unique<Impl>()) {
-    pimpl_->flag_ = pimpl_->log_config_.usingThreadpool();
+    pimpl_->flag_ = true;
     
     if (pimpl_->log_config_.usingThreadpool()) {
         pimpl_->pool_.resize(pimpl_->log_config_.threadNumber());
@@ -108,7 +116,28 @@ Log::Log() : pimpl_(std::make_unique<Impl>()) {
 }
 
 void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
-    if (!pimpl_->flag_) throw std::runtime_error("Logger is closed!!!");
+    if (!pimpl_->flag_) throw std::runtime_error("[log.cpp::addLog()] Logger is closed!!!");
+
+if(pimpl_->log_config_.terminal_print()) {
+    
+    switch (level) {
+    case LogLevel::Debug:
+        std::cout << COLOR_DEBUG << TimeStamp::now() << " [Debug] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
+        break;
+    case LogLevel::Info:
+        std::cout << COLOR_INFO << TimeStamp::now() << " [Info] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
+        break; 
+    case LogLevel::Warning:
+        std::cout << COLOR_WARNING << TimeStamp::now() << " [Warning] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
+        break;
+    case LogLevel::Error:
+        std::cerr << COLOR_ERROR << TimeStamp::now() << " [Error] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
+        break;
+    case LogLevel::Critical:
+        std::cerr << COLOR_CRITICAL << TimeStamp::now() << " [Critical] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
+        break;
+    }
+}
 
     if (pimpl_->log_config_.usingThreadpool()) {
         LogEntry entry(level, module, msg);

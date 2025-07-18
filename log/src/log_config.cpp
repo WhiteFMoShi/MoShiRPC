@@ -24,6 +24,10 @@ int LogConfig::threadNumber() const {
     return std::any_cast<int>(keyToValue_("thread_number"));
 }
 
+bool LogConfig::terminal_print() const {
+    return std::any_cast<bool>(keyToValue_("terminal_print"));
+}
+
 std::string LogConfig::logDir() const {
     return std::any_cast<std::string>(keyToValue_("log_dir_relative_path"));
 }

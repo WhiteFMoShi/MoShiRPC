@@ -31,6 +31,14 @@ private:
     // PIMPL 封装
     struct Impl;
     std::unique_ptr<Impl> pimpl_;
+
+    // 颜色常量
+    static const std::string COLOR_DEBUG;
+    static const std::string COLOR_INFO;
+    static const std::string COLOR_WARNING;
+    static const std::string COLOR_ERROR;
+    static const std::string COLOR_CRITICAL;
+    static const std::string COLOR_RESET;
 private:
     Log();
     ~Log();

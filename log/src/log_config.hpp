@@ -12,6 +12,8 @@ public:
     bool usingThreadpool() const;
     // 设定的线程数
     int threadNumber() const;
+    // 是否在addLog时同步在终端中打印？
+    bool terminal_print() const;
     // 日志存储文件夹（前有'/'）
     std::string logDir() const;
     // 获取makefile所在的目录（默认直接make而不使用-file指定）
@@ -32,14 +34,16 @@ private:
     std::unordered_map<std::string, std::any> config_ {
         {"asynchronous", false},
         {"thread_number", 4},
-        {"log_dir_relative_path", std::string("/Log")}, // 强制使用string进行存储
+        {"log_dir_relative_path", std::string("/Logfile")}, // 强制使用string进行存储
+        {"terminal_print", true}
     };
 
     // 键顺序（确保文件中默认的、具有相关性的配置信息是相邻的）
     std::vector<std::string> sequence_ {
         "asynchronous",
         "thread_number",
-        "log_dir_relative_path"
+        "log_dir_relative_path",
+        "terminal_print"
     };
 
 private:

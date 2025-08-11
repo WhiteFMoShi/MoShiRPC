@@ -4,7 +4,7 @@ TARGETNAME := libthreadpool
 STATIC := a
 
 SRC_DIR := src
-SRC_FILES := $(SRC_DIR)/thread_pool.cpp
+SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
 OBJ_FILES := $(SRC_FILES:.cpp=.o)
 
 all: static

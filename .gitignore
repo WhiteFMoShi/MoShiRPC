@@ -4,12 +4,12 @@
 compile_commands.json
 build
 
-SDK/cJSON
+third_party/cJSON
 
 # 忽略所有测试代码
-**/test*
 **/build
 
 *.a
 *.so
 *.o
+*.out

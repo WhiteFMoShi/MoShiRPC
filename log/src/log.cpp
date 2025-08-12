@@ -13,7 +13,7 @@
 #include "log_file_manager.hpp"
 #include "log_queue.hpp"
 
-using namespace MoShi;
+using namespace moshi;
 
 // #define LOG_DEBUG
 

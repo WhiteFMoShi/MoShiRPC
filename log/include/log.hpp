@@ -1,9 +1,12 @@
 #pragma once
 
+#ifndef MOSHI_LOG_H
+#define MOSHI_LOG_H
+
 #include <string>
 #include <memory>
 
-namespace MoShi {
+namespace moshi {
 
 enum class LogLevel : int {
     Debug = 1,
@@ -50,4 +53,6 @@ private:
     void close();
 };
 
-} // namespace MoShi
+} // namespace moshi
+
+# endif

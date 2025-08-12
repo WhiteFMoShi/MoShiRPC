@@ -4,7 +4,7 @@
 #include "time_stamp.hpp"
 #include "log_format.hpp"
 
-using namespace MoShi;
+using namespace moshi;
 
 // #define LOGENTRY_DEBUG
 

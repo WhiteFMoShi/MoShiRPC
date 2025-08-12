@@ -3,7 +3,7 @@
 
 #include "log_format.hpp"
 
-using namespace MoShi;
+using namespace moshi;
 
 // #define LOGFORMAT_DEBUG
 

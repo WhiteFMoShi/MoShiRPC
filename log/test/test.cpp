@@ -1,6 +1,6 @@
 #include "log.hpp"
 
-using namespace MoShi;
+using namespace moshi;
 
 int main() {
     Log& logger = Log::getInstance();

@@ -61,22 +61,32 @@ make build
 ### Log
 一个高效、文件配置、简单易用的[日志](Note/日志模块.md)（预期使用Json对类行为进行配置）。
 
+#### 🫡模块优势
+1. 较快的写入速度
+2. 统一的使用接口
+3. 文件句柄自动管理，可长期运行
+4. 文件配置日志行为
+
 #### 💡Log架构设计
 ![设计阐述](img/log_construction_design.png)
 
 #### 🚀性能测试
-测试代码：[bench](log/bench/bench.cpp)，实际上我觉得测不太出🤣
+测试代码：[bench](log/bench/bench.cpp)，但是在我主机上测不太出🤣
 
-|写入方式|QPS|
-|:--|:--|
-|同步写入|676,589条/秒|
-|异步写入(2线程)|325,892条/秒|
+在2生产者、每个生产者生成500k日志的情况下：
+1. 单线程+终端输出：
+![alt text](img/singlethread_terminal.png)
 
-1. 同步写入测试（单线程）：
-![sync_write](img/sync_write.png)
+2. 仅单线程：
+![alt text](img/singlethread.png)
 
-2. 异步写入测试（2线程）：
-![async_write](img/async_write.png)
+3. 2线程+终端输出：
+![alt text](img/two_thread+terminal.png)
+
+4. 仅2线程：
+![alt text](img/two_thread.png)
+
+可以看到，**在本人主机上，addLog的写入速度是瓶颈，文件的写入速度明显是快于此的**。
 
 ### RPC
 本项目核心组件

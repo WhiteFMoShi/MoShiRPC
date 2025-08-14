@@ -3,13 +3,14 @@
 #ifndef MOSHI_LOG_H
 #define MOSHI_LOG_H
 
+#include <ctime>
 #include <string>
 #include <memory>
 
 namespace moshi {
 
 enum class LogLevel : int {
-    Debug = 1,
+    Debug,
     Info,
     Warning,
     Error,
@@ -22,6 +23,7 @@ public:
 
     /**
     * @brief Add a new Entry to Log's queue.
+    *
     * @param level The entry Level, can checking in LogLevel.
     * @param module which module add this entry.
     * @param msg The message of this entry.
@@ -29,6 +31,13 @@ public:
                  It may happen Sin multiple-threads enviorment.
     */
     void addLog(LogLevel level, std::string module, const std::string& msg);
+
+    /**
+     * @brief 根据日志级别，单独输出日志于terminal中
+     * 
+     * @param msg 要输出的日志信息
+     */
+    static void terminal_log(LogLevel level, const std::string& module, const std::string& msg);
 
 private:
     // PIMPL 封装
@@ -54,5 +63,6 @@ private:
 };
 
 } // namespace moshi
+
 
 # endif

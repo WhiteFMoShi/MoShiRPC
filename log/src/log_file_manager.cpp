@@ -10,6 +10,7 @@
 
 #include "log_file_manager.hpp"
 #include "log_config.hpp"
+#include "timer.hpp"
 
 // #define LOGFILEMANAGER_DEBUG
 
@@ -26,8 +27,8 @@ LogFileManager::LogFileManager() {
 }
 
 LogFileManager::~LogFileManager() {
-    for(auto& [key, ofs_and_mtx]: manager_) {
-        auto& [ofs, mtx] = ofs_and_mtx;
+    for(auto& [key, ofs_and_mtx] : manager_) {
+        auto& [ofs, mtx, timer] = ofs_and_mtx;
         ofs->close();
     }
 }
@@ -36,34 +37,68 @@ void LogFileManager::writeInFile(const LogEntry& entry) {
 #ifdef LOGFILEMANAGER_DEBUG
     std::cout << "Walk in LogFileManager::writeInFile" << std::endl;
 #endif
+
     std::string log_file = log_dir_ + entry.date() + ".log";
 
-    auto it = manager_.find(log_file);
-    if(it == manager_.end()) {
+    {
         std::lock_guard<std::mutex> locker(manager_mtx);
 
-        it = manager_.find(log_file); // 重新获取
-        // 双重检查
-        if(it == manager_.end()) {
-            std::shared_ptr<std::ofstream> ofs_ptr = std::make_shared<std::ofstream>();
-            std::shared_ptr<std::mutex> mtx_ptr = std::make_shared<std::mutex>();
-            manager_[log_file] = std::make_tuple(ofs_ptr, mtx_ptr);
+        auto it = manager_.find(log_file);
+        if (it == manager_.end()) {
+            // 文件不存在，创建资源
+            auto ofs_ptr = std::make_shared<std::ofstream>();
+            auto mtx_ptr = std::make_shared<std::mutex>();
+            auto timer_ptr = std::make_unique<AdvancedConditionalTimer>();
 
-            std::cout << "Log File: " << log_file << " create succ!!!" << std::endl;
-        }
-    }
-
-    it = manager_.find(log_file); // 重新获取
-    if(it != manager_.end()) {
-        auto& [ofs_ptr, mtx_ptr] = it->second;
-
-        std::lock_guard<std::mutex> locker(*mtx_ptr);
-        if(!ofs_ptr->is_open()) {
+            // 打开文件（追加模式）
             ofs_ptr->open(log_file, std::ios::app);
+            if (!ofs_ptr->is_open()) {
+                throw std::runtime_error("Failed to open log file: " + log_file);
+            }
+
+            // 启动一个 30 分钟的定时器
+            timer_ptr->start_min(30, [this, log_file]() {
+
+                // 定时器超时回调（注意：运行在 worker 线程中！）
+                std::lock_guard<std::mutex> cleanup_lock(this->manager_mtx);
+
+                auto it_cleanup = this->manager_.find(log_file);
+                if (it_cleanup != this->manager_.end()) {
+#ifdef LOGFILEMANAGER_DEBUG
+                    std::cout << "[AUTO-CLEAN] Log file '" << log_file 
+                              << "' has no activity for 30 mins. Removing..." << std::endl;
+#endif
+                    // 关闭文件流（析构时自动关闭）
+                    // 从 map 中移除该项
+                    this->manager_.erase(it_cleanup);
+                }
+            });
+
+            // 存入 manager_
+            manager_[log_file] = std::make_tuple(ofs_ptr, mtx_ptr, std::move(timer_ptr));
+
+#ifdef LOGFILEMANAGER_DEBUG
+            std::cout << "Log File: " << log_file << " created & timer started!!!" << std::endl;
+#endif
         }
-        *ofs_ptr << entry.getMsg();
-    }
-    else {
-        throw std::runtime_error("log file create failure, please look logFileManager::writeInFile!!!");
+
+        // 获取资源
+        auto& [ofs_ptr, mtx_ptr, timer_ptr] = manager_[log_file];
+
+        // 重置定时器，表示该文件还在使用中
+        timer_ptr->reset_timer();
+
+        // 写入日志内容
+        {
+            std::lock_guard<std::mutex> file_lock(*mtx_ptr);
+            if (!ofs_ptr->is_open()) {
+                ofs_ptr->open(log_file, std::ios::app);
+            }
+            if (ofs_ptr->is_open()) {
+                *ofs_ptr << entry.getMsg();
+            } else {
+                throw std::runtime_error("Log file is not open: " + log_file);
+            }
+        }
     }
 }

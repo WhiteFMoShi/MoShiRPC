@@ -55,6 +55,9 @@ struct Log::Impl {
         std::cout << "[DEBUG] " << msg << std::endl;
     }
 #endif
+    static void output_log_(const std::string& color, const std::string& level_str, 
+                            const std::string& module, const std::string& message, 
+                            bool is_error = false);
 };
 
 std::future<bool> Log::Impl::LogWriter::operator()(Log& log) {
@@ -100,6 +103,14 @@ std::future<bool> Log::Impl::LogWriter::operator()(Log& log) {
     return task_ptr->get_future();
 }
 
+void Log::Impl::output_log_(const std::string& color, const std::string& level_str, 
+                        const std::string& module, const std::string& message, 
+                        bool is_error) {
+    auto& stream = is_error ? std::cerr : std::cout;
+    stream << color << TimeStamp::now() << " [" << level_str << "] " << COLOR_RESET
+            << "<" << module << "> " << message << std::endl;
+}
+
 Log::Log() : pimpl_(std::make_unique<Impl>()) {
     pimpl_->flag_ = true;
     
@@ -118,40 +129,33 @@ Log::Log() : pimpl_(std::make_unique<Impl>()) {
 void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
     if (!pimpl_->flag_) throw std::runtime_error("[log.cpp::addLog()] Logger is closed!!!");
 
-if(pimpl_->log_config_.terminal_print()) {
-    
-    switch (level) {
-    case LogLevel::Debug:
-        std::cout << COLOR_DEBUG << TimeStamp::now() << " [Debug] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
-        break;
-    case LogLevel::Info:
-        std::cout << COLOR_INFO << TimeStamp::now() << " [Info] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
-        break; 
-    case LogLevel::Warning:
-        std::cout << COLOR_WARNING << TimeStamp::now() << " [Warning] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
-        break;
-    case LogLevel::Error:
-        std::cerr << COLOR_ERROR << TimeStamp::now() << " [Error] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
-        break;
-    case LogLevel::Critical:
-        std::cerr << COLOR_CRITICAL << TimeStamp::now() << " [Critical] " << COLOR_RESET << "<" << module << "> " << msg << std::endl;
-        break;
+    if(pimpl_->log_config_.terminal_print()) {
+        terminal_log(level, module, msg);
     }
-}
+
+    LogEntry entry(level, module, msg);
 
     if (pimpl_->log_config_.usingThreadpool()) {
-        LogEntry entry(level, module, msg);
         std::lock_guard<std::mutex> lock(pimpl_->mtx_);
         pimpl_->buffer_.push(entry);
-        pimpl_->cv_.notify_all();
+        pimpl_->cv_.notify_one();
         
 #ifdef LOG_DEBUG
         pimpl_->debug("Buffer size: " + std::to_string(pimpl_->buffer_.size()));
         pimpl_->debug("Entry added: " + msg);
 #endif
     } else {
-        LogEntry entry(level, module, msg);
         pimpl_->manager_.writeInFile(entry);
+    }
+}
+
+void moshi::Log::terminal_log(LogLevel level, const std::string& module, const std::string& msg) {
+    switch (level) {
+        case LogLevel::Debug:    Impl::output_log_(COLOR_DEBUG,    "Debug",    module, msg); break;
+        case LogLevel::Info:     Impl::output_log_(COLOR_INFO,     "Info",     module, msg); break;
+        case LogLevel::Warning:  Impl::output_log_(COLOR_WARNING,  "Warning",  module, msg); break;
+        case LogLevel::Error:    Impl::output_log_(COLOR_ERROR,    "Error",    module, msg, true); break;
+        case LogLevel::Critical: Impl::output_log_(COLOR_CRITICAL, "Critical", module, msg, true); break;
     }
 }
 
@@ -161,7 +165,8 @@ void Log::close() {
     if (pimpl_->log_config_.usingThreadpool()) {
         pimpl_->flag_ = false;
         pimpl_->cv_.notify_all();
-        for (auto& fut : pimpl_->pool_) fut.wait();
+        for (auto& fut : pimpl_->pool_) 
+            fut.wait();
         
 #ifdef LOG_DEBUG
         pimpl_->debug("Log closed successfully");

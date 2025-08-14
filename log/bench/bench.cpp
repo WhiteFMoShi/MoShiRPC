@@ -7,7 +7,7 @@
 
 #include "log.hpp"
 
-using namespace MoShi;
+using namespace moshi;
 
 void test_log_performance() {
     Log& logger = Log::getInstance();

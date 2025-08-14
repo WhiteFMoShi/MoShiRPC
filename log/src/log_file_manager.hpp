@@ -1,12 +1,12 @@
 #pragma once
 
 #include <fstream>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 
 #include "log_entry.hpp"
+#include "timer.hpp"
 
 class LogFileManager {
 public:
@@ -21,5 +21,9 @@ private:
     std::mutex manager_mtx;
 
     using LogFilePath = std::string;
-    std::map<LogFilePath, std::tuple<std::shared_ptr<std::ofstream>, std::shared_ptr<std::mutex>>> manager_; // 其中的数据如何进行管理？何时进行删除？不能一直膨胀
+    std::unordered_map<std::string, std::tuple<
+        std::shared_ptr<std::ofstream>,      // 第1个：文件流
+        std::shared_ptr<std::mutex>,         // 第2个：互斥锁
+        std::unique_ptr<AdvancedConditionalTimer>  // 第3个：定时器
+    >> manager_;
 };

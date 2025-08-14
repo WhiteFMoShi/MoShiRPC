@@ -6,14 +6,7 @@ CXXFLAGS = -std=c++17 -Wall -g
 INCLUDES = -I../include -I../src -I/home/xfy/module/SDK
 
 # 源文件列表
-SRC_FILES = ../src/log.cpp \
-            ../src/config/log_config.cpp \
-            ../src/entry/log_entry.cpp \
-            ../src/entry/format/log_format.cpp \
-            ../src/file/log_file_manager.cpp \
-            ../src/utils/time_stamp.cpp \
-            ../src/utils/log_queue.cpp \
-            bench.cpp
+SRC_FILES := $(shell find ../src -name '*.cpp') bench.cpp
 
 # 目标文件列表
 OBJ_FILES = $(SRC_FILES:.cpp=.o)
@@ -34,7 +27,7 @@ $(EXECUTABLE): $(OBJ_FILES)
 
 # 清理目标文件和可执行文件
 clean:
-	rm -rf $(OBJ_FILES) $(EXECUTABLE) Log conf link_test
+	rm -rf $(OBJ_FILES) $(EXECUTABLE) Logfile conf link_test
 
 LIB_DIR := ..
 LIBS := -L$(LIB_DIR) -llog  # 关键！-L 指定路径

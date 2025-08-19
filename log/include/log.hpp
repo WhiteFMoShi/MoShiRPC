@@ -26,9 +26,10 @@ public:
      *
      * @param level 日志级别，可参考 LogLevel 枚举定义。
      * @param module 发起该日志的模块名称。
-     * @param msg 日志的具体消息内容。
+     * @param msg 日志的具体消息内容
      * @exception 如果在调用 close() 方法关闭日志后，再调用 addLog()，则会抛出 std::runtime_error 异常。
      *            该情况可能发生在多线程环境下。
+     * @note 该函数可能会同时在terminal中打印日志，这取决于log.config是如何定义log行为的
      */
     void addLog(LogLevel level, std::string module, const std::string& msg);
 

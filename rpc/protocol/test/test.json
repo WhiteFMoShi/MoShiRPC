@@ -1,0 +1,40 @@
+[
+  {
+    "arguments": [
+      "/bin/g++",
+      "-Wall",
+      "-Isrc",
+      "-Iinclude",
+      "-I/home/xfy/module/third_party",
+      "-g",
+      "-I./protocol/include/",
+      "-I./tcpsocket/include/",
+      "-c",
+      "-o",
+      "tcpsocket/src/tcpsocket.o",
+      "tcpsocket/src/tcpsocket.cpp"
+    ],
+    "directory": "/home/xfy/module/rpc",
+    "file": "/home/xfy/module/rpc/tcpsocket/src/tcpsocket.cpp",
+    "output": "/home/xfy/module/rpc/tcpsocket/src/tcpsocket.o"
+  },
+  {
+    "arguments": [
+      "/bin/g++",
+      "-Wall",
+      "-Isrc",
+      "-Iinclude",
+      "-I/home/xfy/module/third_party",
+      "-g",
+      "-I./protocol/include/",
+      "-I./tcpsocket/include/",
+      "-c",
+      "-o",
+      "protocol/src/protocol.o",
+      "protocol/src/protocol.cpp"
+    ],
+    "directory": "/home/xfy/module/rpc",
+    "file": "/home/xfy/module/rpc/protocol/src/protocol.cpp",
+    "output": "/home/xfy/module/rpc/protocol/src/protocol.o"
+  }
+]

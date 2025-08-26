@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "log.hpp"
+
 class TcpSocket {
 public:
     TcpSocket();
@@ -30,4 +32,6 @@ public:
 
 private:
     int listen_fd_ = -1;  // 监听 Socket 的文件描述符
+
+    moshi::Log& log;
 };

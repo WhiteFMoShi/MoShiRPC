@@ -23,7 +23,7 @@ int main() {
 
     TcpSocket client;
     client.connect("127.0.0.1", 8080);
-    client.send(client.get_sockfd(), "Hello RPC", 9);
+    client.send(client.get_sockfd(), "Hello RPC\0", 9);
 
     return 0;
 }

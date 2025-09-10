@@ -1,177 +1,136 @@
-#include <any>
-#include <cctype>
-#include <cstddef>
-#include <fstream>
-#include <filesystem>
-#include <ios>
-#include <iostream>
-#include <sstream>
 #include <stdexcept>
-#include <string>
+#include <fstream>
 
+#include "cJSON/cJSON.h"
 #include "log_config.hpp"
 
-// #define LOGCONFIG_DEBUG
-
-bool LogConfig::usingThreadpool() const {
-    // 不能使用"[]",它是非const的，因为会默认插入被访问但是不存在的键
-    // 此处需要使用at，因为at不存在这一点，它只是一个访问器，并且它具有越界检查
-    // 我有一个at包装器(keyToValue)
-    return std::any_cast<bool>(keyToValue_("asynchronous"));
+LogConfig& LogConfig::getInstance(const std::string& configPath) {
+    static LogConfig instance(configPath);
+    return instance;
 }
 
-int LogConfig::threadNumber() const {
-    return std::any_cast<int>(keyToValue_("thread_number"));
-}
-
-bool LogConfig::terminal_print() const {
-    return std::any_cast<bool>(keyToValue_("terminal_print"));
-}
-
-std::string LogConfig::logDir() const {
-    return std::any_cast<std::string>(keyToValue_("log_dir_relative_path"));
-}
-
-// 单例接口
-LogConfig& LogConfig::getConfig() {
-    static LogConfig config;
-    return config;
-}
-
-LogConfig::LogConfig(std::string conf_dir, std::string configfile_name) {
-    workspace_ = getWorkSpace();
-    config_file_name_ = configfile_name;
-    conf_dir_ = conf_dir;
-    config_file_full_path_ = workspace_ + conf_dir + "/" + config_file_name_; // log.config路径
-
-    setConfig_();
-}
-
-std::string LogConfig::getWorkSpace() const {
-    std::string workdir(std::filesystem::current_path());
-#ifdef  LOGCONFIG_DEBUG
-    std::cout << "Workspace: " << workdir << std::endl;
-#endif
-    return workdir;
-}
-
-bool LogConfig::setConfig_() {
-    std::fstream file_stream;
-
-    file_stream.open(config_file_full_path_, std::ios_base::in); // 只读模式
-#ifdef  LOGCONFIG_DEBUG
-    std::cout << "Config file path: " << config_file_full_path_ << std::endl;
-#endif
-    bool flag = false; // 用于标识用户自定义的log.config是否被读取
-
-    // 文件成功打开了
-    if(file_stream.is_open()) {
-        flag = true;
-        char line[256];
-        while(file_stream.getline(line, 256, '\n')) {
-            std::stringstream ss(line);
-            std::string key, value_str; // Renamed value to value_str to avoid confusion
-            if(std::getline(ss, key, ':') && \
-                std::getline(ss, value_str)) {
-                key = trim_(key), value_str = trim_(value_str);
-#ifdef  LOGCONFIG_DEBUG
-                std::cout << "Parse: " << key << ": " << value_str << std::endl; // Debug info
-                // It's safer to check type after potential modification or use a temporary any
-                // For now, assuming config_.at(key) refers to the type defined in header for this check
-                if (config_.count(key)) { // Ensure key exists before at()
-                    std::cout << "value type_info (default): " << keyToValue_(key).type().name() << std::endl;
-                }
-                std::cout << "---------------" << std::endl;
-#endif
-            }
-            toLower_(key); // 键全部变为小写
-            
-            if (!config_.count(key)) { // Skip if key is not in predefined config
-                continue;
-            }
-
-            if(keyToValue_(key).type() == typeid(int))
-                config_[key] = std::stoi(value_str);
-            else if(keyToValue_(key).type() == typeid(std::string)) { // 修改: 检查 std::string 类型
-                config_[key] = value_str; // 修改: 直接存储 std::string
-#ifdef  LOGCONFIG_DEBUG
-                std::cout << "in string setting that > " << key << " : "<< value_str << std::endl;
-#endif
-            }
-            else if(keyToValue_(key).type() == typeid(bool))
-                config_[key] = (value_str == "true" ? true : false);
-        }
-
-        file_stream.close();
-    }
-    else {
-        file_stream.close(); // 关闭文件后重新打开
-
-        std::filesystem::path p(config_file_full_path_);
-        std::filesystem::path parent_p(p.parent_path()); // 用于目录检查
-        if(!std::filesystem::exists(parent_p) && !std::filesystem::create_directory(parent_p)) { // 目录不存在就创建目录
-            throw std::runtime_error("Create conf path error!!!"); // 目录创建失败（抛出异常）
-        }
-
-        file_stream.open(config_file_full_path_, std::ios_base::out);
-        // 向其中添加配置信息
-        for(const auto& key : sequence_) {
-            file_stream << key << ": ";
-            auto value = keyToValue_(key);
-            if(value.type() == typeid(bool)) {
-                file_stream << (std::any_cast<bool>(value) ? "true" : "false") << std::endl;
-            }
-            else if(value.type() == typeid(std::string)) // 修改: 检查 std::string 类型
-                file_stream << std::any_cast<std::string>(value) << std::endl; // 修改: 转换并输出 std::string
-            else if(value.type() == typeid(int))
-                file_stream << std::any_cast<int>(value) << std::endl;
-        }
-
-        file_stream.close();
-    }
-    if(flag) {
-        std::cout << "Config file read succ!!!" << std::endl;
-    }
-    else {
-        std::cerr << "Config file doesn't exist or path error, auto touch new one!!!" << std::endl;
+LogConfig::LogConfig(const std::string& configPath) {
+    workspacePath_ = std::filesystem::current_path();
+    
+    if (!configPath.empty()) {
+        configPath_ = configPath;
+    } else {
+        configPath_ = workspacePath_ / Defaults::LOG_DIR / "log_config.json";
     }
 
-    std::cout << "config setting is:" << std::endl;
-    for(const auto& key : sequence_) {
-        std::cout << "\t" << key << " : ";
-        auto value = config_.at(key);
-        if(value.type() == typeid(bool)) {
-            std::cout << (std::any_cast<bool>(value) ? "true" : "false") << std::endl;
-        }
-        else if(value.type() == typeid(std::string))
-            std::cout << std::any_cast<std::string>(value) << std::endl;
-        else if(value.type() == typeid(int))
-            std::cout << std::any_cast<int>(value) << std::endl;
-        else {
-            std::runtime_error("value type can't match");
-        }
+    if (!loadConfig()) {
+        initDefaultConfig();
+        saveConfig();
+    }
+}
+
+bool LogConfig::loadConfig() {
+    if (!std::filesystem::exists(configPath_)) {
+        return false;
     }
 
-    return flag;
+    // 读取JSON文件
+    std::ifstream file(configPath_);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open config file: " + configPath_.string());
+    }
+
+    // 直接使用字节流的方式快速读取文件中的数据
+    std::string jsonContent((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
+    file.close();
+
+    // 解析JSON
+    cJSON* root = cJSON_Parse(jsonContent.c_str());
+    if (!root) {
+        throw std::runtime_error("Failed to parse JSON config");
+    }
+
+    // 读取配置项
+    cJSON* item = nullptr;
+    if ((item = cJSON_GetObjectItem(root, ConfigKeys::ASYNC_MODE))) {
+        asyncMode_ = cJSON_IsTrue(item);
+    }
+    if ((item = cJSON_GetObjectItem(root, ConfigKeys::THREAD_POOL_SIZE))) {
+        threadPoolSize_ = item->valueint;
+    }
+    if ((item = cJSON_GetObjectItem(root, ConfigKeys::LOG_DIR))) {
+        logDirectory_ = item->valuestring;
+    }
+    if ((item = cJSON_GetObjectItem(root, ConfigKeys::TERMINAL_PRINT))) {
+        printToTerminal_ = cJSON_IsTrue(item);
+    }
+
+    cJSON_Delete(root);
+    return true;
 }
 
-const std::string LogConfig::trim_(std::string& str) {
-    size_t n = str.size();
-    size_t begin = 0, end = n;
-    while(begin < n && str[begin] == ' ')
-        begin++;
-    while(end >= 0 && end >= begin && str[end] == ' ')
-        end--;
-    if(begin < end)
-        return str.substr(begin, end - begin);
-    return "";
+void LogConfig::saveConfig() const {
+    // 确保配置目录存在
+    std::filesystem::create_directories(configPath_.parent_path());
+
+    // 创建JSON对象
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, ConfigKeys::ASYNC_MODE, asyncMode_);
+    cJSON_AddNumberToObject(root, ConfigKeys::THREAD_POOL_SIZE, threadPoolSize_);
+    cJSON_AddStringToObject(root, ConfigKeys::LOG_DIR, logDirectory_.string().c_str());
+    cJSON_AddBoolToObject(root, ConfigKeys::TERMINAL_PRINT, printToTerminal_);
+
+    // 转换为字符串并保存
+    char* jsonStr = cJSON_Print(root);
+    std::ofstream file(configPath_);
+    if (!file.is_open()) {
+        cJSON_Delete(root);
+        free(jsonStr);
+        throw std::runtime_error("Cannot write config file: " + configPath_.string());
+    }
+
+    file << jsonStr;
+    file.close();
+
+    cJSON_Delete(root);
+    free(jsonStr);
 }
 
-void LogConfig::toLower_(std::string& str) {
-    for(auto& c : str)
-        c = std::tolower(c);
+void LogConfig::initDefaultConfig() {
+    asyncMode_ = Defaults::ASYNC_MODE;
+    threadPoolSize_ = Defaults::THREAD_POOL_SIZE;
+    logDirectory_ = Defaults::LOG_DIR;
+    printToTerminal_ = Defaults::TERMINAL_PRINT;
 }
 
-std::any LogConfig::keyToValue_(const std::string& key) const {
-    return config_.at(key);
+// Getter methods
+bool LogConfig::isAsyncMode() const { return asyncMode_; }
+int LogConfig::getThreadPoolSize() const { return threadPoolSize_; }
+bool LogConfig::isPrintToTerminal() const { return printToTerminal_; }
+std::filesystem::path LogConfig::getLogDirectory() const { return logDirectory_; }
+std::filesystem::path LogConfig::getWorkspacePath() const { return workspacePath_; }
+
+
+void LogConfig::setAsyncMode(bool async) {
+    asyncMode_ = async;
+}
+
+void LogConfig::setThreadPoolSize(int size) {
+    if (size < 1) {
+        throw std::invalid_argument("Thread pool size must be at least 1");
+    }
+    threadPoolSize_ = size;
+}
+
+void LogConfig::setPrintToTerminal(bool print) {
+    printToTerminal_ = print;
+}
+
+void LogConfig::setLogDirectory(const std::filesystem::path& dir) {
+    logDirectory_ = dir;
+}
+
+void LogConfig::configure(bool async, int threadPoolSize, 
+                         const std::filesystem::path& logDir, bool printToTerminal) {
+    setAsyncMode(async);
+    setThreadPoolSize(threadPoolSize);
+    setLogDirectory(logDir);
+    setPrintToTerminal(printToTerminal);
+    saveConfig(); // 保存更改到配置文件
 }

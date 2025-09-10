@@ -15,9 +15,9 @@
 // #define LOGFILEMANAGER_DEBUG
 
 LogFileManager::LogFileManager() {
-    const LogConfig& config = LogConfig::getConfig();
+    const LogConfig& config = LogConfig::getInstance();
 
-    log_dir_ = config.getWorkSpace() + config.logDir() + "/";
+    log_dir_ = config.getWorkspacePath() / config.getLogDirectory() / "";
 
     std::cout << "Log Dir is: " << log_dir_ << std::endl;
     if(std::filesystem::exists(log_dir_) == false && std::filesystem::create_directories(log_dir_))

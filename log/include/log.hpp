@@ -6,6 +6,7 @@
 #include <ctime>
 #include <string>
 #include <memory>
+#include <filesystem>
 
 namespace moshi {
 
@@ -42,6 +43,29 @@ public:
      */
     static void terminal_log(LogLevel level, const std::string& module, const std::string& msg);
 
+    /**
+     * @brief Set special suffix adding after log file, after setting, the log file name will be 
+     *          YYYY_MM_DD_{suffix}.log
+     * 
+     * @param suffix 
+     */
+    void set_log_file_suffix(const std::string& suffix = "");    // 添加配置相关的接口
+    
+    void configure(bool async, int threadPoolSize, 
+                  const std::filesystem::path& logDir, bool printToTerminal);
+    
+    void setAsyncMode(bool async);
+    void setThreadPoolSize(int size);
+    void setPrintToTerminal(bool print);
+    void setLogDirectory(const std::filesystem::path& dir);
+
+    /**
+     * @brief 关闭线程池，并清理队列中的所有日志条目。
+     * 
+     * @warning 此函数不应被直接调用，因为 open() 函数尚未实现。
+     */
+    void stop();
+
 private:
     // PIMPL 封装
     struct Impl;
@@ -58,12 +82,9 @@ private:
     Log();
     ~Log();
 
-    /**
-     * @brief 关闭线程池，并清理队列中的所有日志条目。
-     * 
-     * @warning 此函数不应被直接调用，因为 open() 函数尚未实现。
-     */
-    void close();
+    // void run();
+
+    void initLogger(); // 初始化日志系统
 };
 
 } // namespace moshi

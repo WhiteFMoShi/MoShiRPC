@@ -1,6 +1,8 @@
 ### Crucial
 - [x] 当前的Makefile存在硬编码问题，等对Makefile有较好的学习之后进行修复
 
+- [ ] <font color="red">log组件存在严重bug，没法正常进行资源释放，需要尽快排查！！！同时log的设计使得其稳定性极差，需要考虑重新进行设计（主要是类的实现，整个类模块之间的关系应该是没问题的）</font>
+
 - [ ] RPC组件
     - [ ] 重学网络编程
         1. 细读epoll
@@ -31,16 +33,47 @@
         - [ ] 负载均衡
         - [ ] 服务管理
 
-- [ ] 修改配置设置方式，最好更改为使用json文件进行配置，parse使用开源库[cJSON](https://github.com/DaveGamble/cJSON)，这里或许可以单独集成出一个模块
-
 - [ ] log
     1. [x] 通过对muduo的学习，好像并不需要直接编译成库文件，这个可以交由用户操作，而我们只需要提供模块配置信息，修改对应的Makefile
     2. [x] 修改log.hpp的接口，用RAII进行管理优化，并实现`open()`(open未实现，个人觉得目前可以不用了)
-    3. [ ] 配置文件更改后使用Json
+    3. [x] 配置文件更改后使用Json
     4. [x] 目前日志模块的使用还是有可修改的地方，现在只有单一接口add_log，使用起来比较繁琐，或许可以进行进一步包装
     5. [ ] 优化log_queue
     6. [x] 实现timer部分逻辑，并于log_file_manager中使用，用于管理文件周期
+    7. [ ] config的设定好像是有问题的，应该能让使用者手动设定，而不是全部由程序写死
+    8. [ ] 在addLog的时候，可以添加一些更复杂的策略，这样获取能够提高IO效率
+    9. [ ] 在本地测试的时候，若是两个进程同时试图打开同一个文件，这就会导致吐核，后来的进程会崩溃，应该阻止这种情况发生
+    10. [ ] 修改定时器触发逻辑，现在在file_manager中，启用start_min中传入的回调函数有问题，会导致循环析构，若是上锁了还有循环上锁问题
+        ```cpp
+                    // 启动一个 1 分钟的定时器(传入的回调函数
+                /** 
+                    有问题！！！！会导致程序崩溃！！！
+                    在删除map元素时会调用定时器析构函数，而析构函数中会调用stop()
+                    而stop()中会join worker线程，而worker线程中又会调用回调函数，回调函数再次析构定时器，导致死循环
+                */
+                timer_ptr->start_min(1, [this, log_file]() {
+                    std::cout << "定时器回调函数被调用，准备清理日志文件: " << log_file << std::endl;
+                    // 定时器超时回调（注意：运行在 worker 线程中！）
+                    std::lock_guard<std::mutex> cleanup_lock(this->manager_mtx);
 
+                    std::cout << "未出现死锁" << std::endl;
+
+                    auto it_cleanup = this->manager_.find(log_file);
+
+                    std::cout << "找到了" << std::endl;
+                    if (it_cleanup != this->manager_.end()) {
+                        std::cout << "准备移除" << std::endl;
+    #ifdef LOGFILEMANAGER_DEBUG
+                        std::cout << "[AUTO-CLEAN] Log file '" << log_file 
+                                << "' has no activity for 30 mins. Removing..." << std::endl;
+    #endif
+                        // 关闭文件流（析构时自动关闭）
+                        // 从 map 中移除该项
+                        this->manager_.erase(it_cleanup);
+                        std::cout << "已移除" << std::endl;
+                    }
+                });
+        ```
 
 - [ ] 再实现一个RPC和一个客户端，这个客户端用于和服务端通信，控制服务端的行为（一个Web就行！不需要客户端！）
     - UI不使用Qt，而是使用别的开源框架（仍在挑选）
@@ -51,6 +84,5 @@
         1. 协议安全性的处理，需要使用类似CRC校验的安全防护措施（我其实还不是很明白为什么需要这个，TCP不是可靠传输吗？网络层不是就有可靠传输的作用吗？似乎它就已经有校验处理了）
         2. 多协议选择，目前使用的是自定义文本协议，使用的是Json进行传输，这样的数据可读性强但是传输的内容还是比较庞大的。可以加上使用protobuf协议传输的部分。
 
-
 - [ ] network
-    - [ ] 进行优化，可以拓展一个连接池，用以连接优化，但是不知道这个是不是需要的
+    - [ ] 进行优化，可以拓展一个连接池，用以连接优化

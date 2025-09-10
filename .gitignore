@@ -9,6 +9,9 @@ third_party/cJSON
 # 忽略所有测试代码
 **/build
 
+# protoc自动生成的代码
+*.pb.*
+
 *.a
 *.so
 *.o

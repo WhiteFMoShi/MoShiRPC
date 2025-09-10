@@ -14,4 +14,4 @@ INCLUDE_PATH := -I$(SRC) -I$(INCLUDE) -I$(THIRD_PARTY_PATH) \
 OJBS_PATH := $(BUILD_PATH)/obj
 
 CXX := g++
-CXXFLAGS := -Wall -g -std=c++17 $(INCLUDE_PATH)
+CXXFLAGS := -Wall -g -std=c++17 $(INCLUDE_PATH) -static

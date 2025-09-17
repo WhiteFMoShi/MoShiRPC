@@ -4,7 +4,9 @@
 compile_commands.json
 build
 
+# 开源库部分
 third_party/cJSON
+third_party/spdlog
 
 # 忽略所有测试代码
 **/build

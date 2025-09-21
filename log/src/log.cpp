@@ -26,18 +26,20 @@ const std::string Log::COLOR_RESET = "\033[0m";
 
 Log& Log::getInstance() {
     static Log log_;
+    std::cout << "creating log instance..." << std::endl;
+    log_.addLog(LogLevel::Info, "LOG", "Logger init...");
     return log_;
 }
 
 struct Log::Impl {
-    Impl() : log_config_(LogConfig::getInstance()) {}
+    Impl() : log_config_(LogConfig::getConfig()) {}
 
     class LogWriter {
     public:
         std::future<bool> operator()(Log& log);
     };
 
-    LogConfig& log_config_;  // 改为非const引用
+    const LogConfig& log_config_;
     std::atomic<bool> flag_;
     LogQueue buffer_;
     std::vector<std::future<bool>> pool_;
@@ -62,33 +64,42 @@ std::future<bool> Log::Impl::LogWriter::operator()(Log& log) {
     std::packaged_task<bool(Log&)> task([](Log& log) -> bool {
         auto& impl = *log.pimpl_;
         
+#ifdef LOG_DEBUG
+        impl.debug("LogWriter task started");
+#endif
+
         while (impl.flag_ || !impl.buffer_.empty()) {
-            LogEntry entry;
-            {
-                std::unique_lock<std::mutex> lock(impl.mtx_);
+            std::unique_lock<std::mutex> lock(impl.mtx_);
+
+            if (!impl.buffer_.empty()) {
+                LogEntry entry = impl.buffer_.front_and_pop();
+                lock.unlock();
                 
-                if (impl.buffer_.empty() && impl.flag_) {
-                    impl.cv_.wait(lock, [&impl] { 
-                        return !impl.buffer_.empty() || !impl.flag_; 
-                    });
-                }
+#ifdef LOG_DEBUG
+                impl.debug("Writing entry: " + entry.message);
+#endif
+
+                impl.manager_.writeInFile(entry);
+            } else {
+                #ifdef LOG_DEBUG
+                impl.debug("Worker waiting...");
+                #endif
                 
-                if (impl.buffer_.empty() && !impl.flag_) {
-                    break;
-                }
-                
-                entry = impl.buffer_.front_and_pop();
-                impl.cv_.notify_all();  // 通知等待的线程
+                impl.cv_.wait(lock, [&impl] { 
+                    return !impl.buffer_.empty() || !impl.flag_; 
+                });
             }
-            
-            // 在锁外写入文件
-            impl.manager_.writeInFile(entry);
         }
-        return true;
+        return impl.buffer_.empty();
     });
 
     auto task_ptr = std::make_shared<decltype(task)>(std::move(task));
     std::thread([task_ptr, &log] { (*task_ptr)(log); }).detach();
+    
+#ifdef LOG_DEBUG
+    log.pimpl_->debug("LogWriter task dispatched");
+#endif
+    
     return task_ptr->get_future();
 }
 
@@ -101,15 +112,11 @@ void Log::Impl::output_log_(const std::string& color, const std::string& level_s
 }
 
 Log::Log() : pimpl_(std::make_unique<Impl>()) {
-    initLogger();
-}
-
-void Log::initLogger() {
     pimpl_->flag_ = true;
     
-    if (pimpl_->log_config_.isAsyncMode()) {
-        pimpl_->pool_.resize(pimpl_->log_config_.getThreadPoolSize());
-        for (int i = 0; i < pimpl_->log_config_.getThreadPoolSize(); i++) {
+    if (pimpl_->log_config_.usingThreadpool()) {
+        pimpl_->pool_.resize(pimpl_->log_config_.threadNumber());
+        for (int i = 0; i < pimpl_->log_config_.threadNumber(); i++) {
             Impl::LogWriter f;
             pimpl_->pool_[i] = f(*this);
 #ifdef LOG_DEBUG
@@ -117,47 +124,18 @@ void Log::initLogger() {
 #endif
         }
     }
-    addLog(LogLevel::Info, "log", "Logger initialized...");
-}
-
-void Log::configure(bool async, int threadPoolSize, 
-                   const std::filesystem::path& logDir, bool printToTerminal) {
-    pimpl_->log_config_.configure(async, threadPoolSize, logDir, printToTerminal);
-    // 重新初始化logger
-    stop();
-    initLogger();
-}
-
-void Log::setAsyncMode(bool async) {
-    pimpl_->log_config_.setAsyncMode(async);
-    stop();
-    initLogger();
-}
-
-void Log::setThreadPoolSize(int size) {
-    pimpl_->log_config_.setThreadPoolSize(size);
-    stop();
-    initLogger();
-}
-
-void Log::setPrintToTerminal(bool print) {
-    pimpl_->log_config_.setPrintToTerminal(print);
-}
-
-void Log::setLogDirectory(const std::filesystem::path& dir) {
-    pimpl_->log_config_.setLogDirectory(dir);
 }
 
 void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
     if (!pimpl_->flag_) throw std::runtime_error("[log.cpp::addLog()] Logger is closed!!!");
 
-    if(pimpl_->log_config_.isPrintToTerminal()) {
+    if(pimpl_->log_config_.terminal_print()) {
         terminal_log(level, module, msg);
     }
 
     LogEntry entry(level, module, msg);
 
-    if (pimpl_->log_config_.isAsyncMode()) {
+    if (pimpl_->log_config_.usingThreadpool()) {
         std::lock_guard<std::mutex> lock(pimpl_->mtx_);
         pimpl_->buffer_.push(entry);
         pimpl_->cv_.notify_one();
@@ -181,46 +159,22 @@ void moshi::Log::terminal_log(LogLevel level, const std::string& module, const s
     }
 }
 
-void moshi::Log::set_log_file_suffix(const std::string& suffix) {
-    // 实现文件后缀设置
-    // TODO: 实现该功能
-}
-
-void Log::stop() {
-    if (!pimpl_->flag_) return;  // 避免重复停止
-    
-    addLog(LogLevel::Info, "log", "stopping...");
-    pimpl_->flag_ = false;
-    
-    if (pimpl_->log_config_.isAsyncMode()) {
+void Log::close() {
+    addLog(LogLevel::Info, "LOG", "logger is destoried...");
+    // 若是使用了线程池就清理线程池中的所有条目
+    if (pimpl_->log_config_.usingThreadpool()) {
+        pimpl_->flag_ = false;
         pimpl_->cv_.notify_all();
-        // 等待所有写入操作完成
-        std::unique_lock<std::mutex> lock(pimpl_->mtx_);
-        while (!pimpl_->buffer_.empty()) {
-            pimpl_->cv_.wait(lock);
-        }
-    }
-    
+        for (auto& fut : pimpl_->pool_) 
+            fut.wait();
+        
 #ifdef LOG_DEBUG
-    pimpl_->debug("Log stopped successfully");
+        pimpl_->debug("Log closed successfully");
 #endif
+    }
 }
 
 Log::~Log() {
-    // 先停止所有日志写入
-    stop();
-    
-    // 等待所有异步任务完成
-    if (pimpl_->log_config_.isAsyncMode()) {
-        for (auto& fut : pimpl_->pool_) {
-            if (fut.valid()) {
-                fut.wait();
-            }
-        }
-    }
-    
-    // 清空 pimpl_ 以触发 LogFileManager 的析构
-    pimpl_.reset();
-    
+    close();
     std::cout << "log instance was destory!" << std::endl;
 }

@@ -17,15 +17,13 @@ public:
 
     void writeInFile(const LogEntry&);
 private:
-    void clean_up_(const std::string& log_file_name);
-    std::string log_dir_;
+    std::string log_dir_; // 末尾带有"/"
     std::mutex manager_mtx;
 
     using LogFilePath = std::string;
     std::unordered_map<std::string, std::tuple<
-        std::shared_ptr<std::ofstream>,
-        std::shared_ptr<std::mutex>,
-        std::unique_ptr<AdvancedConditionalTimer>
+        std::shared_ptr<std::ofstream>,      // 第1个：文件流
+        std::shared_ptr<std::mutex>,         // 第2个：互斥锁
+        std::unique_ptr<AdvancedConditionalTimer>  // 第3个：定时器
     >> manager_;
-
 };

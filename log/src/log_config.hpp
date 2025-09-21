@@ -1,81 +1,64 @@
 #pragma once
 
+#include <any>
 #include <string>
-#include <filesystem>
+#include <unordered_map>
+#include <vector>
 
+// 只适合有一个config，所以单例模式是最好的
 class LogConfig {
 public:
-    // 获取配置单例
-    static LogConfig& getInstance(const std::string& configPath = "");
-    
-    // 配置访问接口
-    bool isAsyncMode() const;
-    int getThreadPoolSize() const;
-    bool isPrintToTerminal() const;
-    std::filesystem::path getLogDirectory() const;
-    std::filesystem::path getWorkspacePath() const;
+    // 是否使用线程池
+    bool usingThreadpool() const;
+    // 设定的线程数
+    int threadNumber() const;
+    // 是否在addLog时同步在终端中打印？
+    bool terminal_print() const;
+    // 日志存储文件夹（前有'/'）
+    std::string logDir() const;
+    // 获取makefile所在的目录（默认直接make而不使用-file指定）
+    std::string getWorkSpace() const;
 
-    // 禁用拷贝和移动
-    LogConfig(const LogConfig&) = delete;
-    LogConfig& operator=(const LogConfig&) = delete;
+    // 单例获取
+    static LogConfig& getConfig();
+private:
+    /*
+        Log.Config的信息，用于找到配置文件
+    */
+    std::string workspace_; // 文件路径
+    std::string config_file_name_; // 文件名
+    std::string config_file_full_path_; // config文件全路径
+    std::string conf_dir_; // 配置文件所在目录
+
+    // log具有的配置信息
+    std::unordered_map<std::string, std::any> config_ {
+        {"asynchronous", false},
+        {"thread_number", 4},
+        {"log_dir_relative_path", std::string("/Logfile")}, // 强制使用string进行存储
+        {"terminal_print", true}
+    };
+
+    // 键顺序（确保文件中默认的、具有相关性的配置信息是相邻的）
+    std::vector<std::string> sequence_ {
+        "asynchronous",
+        "thread_number",
+        "log_dir_relative_path",
+        "terminal_print"
+    };
+
+private:
+    LogConfig(std::string conf_dir = "/conf", std::string config_file_name = "log.config");
     LogConfig(LogConfig&&) = delete;
-    LogConfig& operator=(LogConfig&&) = delete;
 
-public:
-    void setAsyncMode(bool async);
-    void setThreadPoolSize(int size);
-    void setPrintToTerminal(bool print);
-    void setLogDirectory(const std::filesystem::path& dir);
-
-    // 添加一个方法用于一次性设置所有配置
-    void configure(bool async, int threadPoolSize, 
-                  const std::filesystem::path& logDir, bool printToTerminal);
-
-private:
-    // 配置项键名定义
-    struct ConfigKeys {
-        static constexpr const char* ASYNC_MODE = "asyncMode";
-        static constexpr const char* THREAD_POOL_SIZE = "threadPoolSize";
-        static constexpr const char* LOG_DIR = "logDirectory";
-        static constexpr const char* TERMINAL_PRINT = "printToTerminal";
-    };
-
-    // 默认配置值
-    struct Defaults {
-        static constexpr bool ASYNC_MODE = false;
-        static constexpr int THREAD_POOL_SIZE = 1;
-        static constexpr const char* LOG_DIR = "logs";
-        static constexpr bool TERMINAL_PRINT = true;
-    };
-
-    LogConfig(const std::string& configPath = "");
-    ~LogConfig() = default;
-
-    /**
-     * @brief 加载配置文件
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool loadConfig();
-    /**
-     * @brief 保存当前配置到文件
-     */
-    void saveConfig() const;
-    /**
-     * @brief 初始化默认配置
-     */
-    void initDefaultConfig();
+    LogConfig operator=(LogConfig&&) = delete;
     
-    std::filesystem::path resolveConfigPath() const;
-
-private:
-    std::filesystem::path configPath_;
-    std::filesystem::path workspacePath_;
+    // 获取log.config中的配置信息
+    bool setConfig_();
+    // 去除字符串前后的空格
+    const std::string trim_(std::string& str); 
+    // 将字符串统一转换成小写
+    void toLower_(std::string& str);
     
-    // 配置数据
-    bool asyncMode_{Defaults::ASYNC_MODE};
-    int threadPoolSize_{Defaults::THREAD_POOL_SIZE};
-    std::filesystem::path logDirectory_{Defaults::LOG_DIR};
-    bool printToTerminal_{Defaults::TERMINAL_PRINT};
+    std::any keyToValue_(const std::string&) const;
 };
+

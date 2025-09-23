@@ -25,6 +25,7 @@ void AdvancedConditionalTimer::start_min(const int& min, OnTimeCallback callback
             // 若是是被唤醒的，说明有文件写入，重置定时器
             // 若是超时，结束定时器
             if(status == std::cv_status::timeout) {
+                running_ = false;
                 callback();
                 break;
             }

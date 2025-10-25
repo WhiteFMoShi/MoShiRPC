@@ -56,8 +56,8 @@ void LogFileManager::writeInFile(const LogEntry& entry) {
                 throw std::runtime_error("Failed to open log file: " + log_file);
             }
 
-            // 启动一个 30 分钟的定时器
-            timer_ptr->start_min(30, [this, log_file]() {
+            // 启动一个 1分钟的定时器（原定是30分钟，但是这对于一个系统来说有点太久了）
+            timer_ptr->start_min(1, [this, log_file]() {
 
                 // 定时器超时回调（注意：运行在 worker 线程中！）
                 std::lock_guard<std::mutex> cleanup_lock(this->manager_mtx);

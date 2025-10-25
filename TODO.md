@@ -2,6 +2,7 @@
 - [x] 当前的Makefile存在硬编码问题，等对Makefile有较好的学习之后进行修复
 
 - [ ] <font color="red">log组件存在严重bug，没法正常进行资源释放，需要尽快排查！！！同时log的设计使得其稳定性极差，需要考虑重新进行设计（主要是类的实现，整个类模块之间的关系应该是没问题的）</font>
+    - [ ] 先使用开源的log库，后续在log完善、稳定后换用自己的log库（但是开源的log库可以保证项目的稳定性）
 
 - [ ] RPC组件
     - [ ] 重学网络编程
@@ -15,12 +16,14 @@
     - [x] 设计一个协议，用于数据传输
     - [ ] zookeeper，简单进行负载均衡
     - [ ] 是否让允许用户设置可使用的函数？服务器之间的同步问题？
+    
+- [ ] 解决`rpc/network/Protocol`仍存在的网络粘包问题（用好length字段）
 
-- [ ] 解决rpc/network/Protocol仍存在的网络粘包问题（用好length字段）
+- [ ] 当前`log`的`file_manager`还有问题，不会对文件handle进行自动释放，若是程序长期运行这肯定会出错：设定一个定时器，若是三十分钟内一直没有该文件的log被写入，就自动释放对应的索引。
 
-- [ ] 当前log的file_manager还有问题，不会对文件handle进行自动释放，若是程序长期运行这肯定会出错：设定一个定时器，若是三十分钟内一直没有该文件的log被写入，就自动释放对应的索引。
+- [ ] 要想实现真正的分布式，负载均衡这些问题是一定要进行解决的首先要考虑到的就是**数据一致性问题**，打算使用Raft进行处理，目前有一参考论文：[Raft](https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf)
 
-### Previous
+### Outlooking
 - [x] 在学习CMake之后，重写所有的CMakeLists.txt(<font color="red">现已彻底放弃CMake，全面使用Makefile</font>)
 - [x] 不考虑跨平台问题的话，还是使用Makefile吧，重新学习makefile
 - [x] 思考项目定位——（RPC）
@@ -44,36 +47,6 @@
     8. [ ] 在addLog的时候，可以添加一些更复杂的策略，这样获取能够提高IO效率
     9. [ ] 在本地测试的时候，若是两个进程同时试图打开同一个文件，这就会导致吐核，后来的进程会崩溃，应该阻止这种情况发生
     10. [ ] 修改定时器触发逻辑，现在在file_manager中，启用start_min中传入的回调函数有问题，会导致循环析构，若是上锁了还有循环上锁问题
-        ```cpp
-                    // 启动一个 1 分钟的定时器(传入的回调函数
-                /** 
-                    有问题！！！！会导致程序崩溃！！！
-                    在删除map元素时会调用定时器析构函数，而析构函数中会调用stop()
-                    而stop()中会join worker线程，而worker线程中又会调用回调函数，回调函数再次析构定时器，导致死循环
-                */
-                timer_ptr->start_min(1, [this, log_file]() {
-                    std::cout << "定时器回调函数被调用，准备清理日志文件: " << log_file << std::endl;
-                    // 定时器超时回调（注意：运行在 worker 线程中！）
-                    std::lock_guard<std::mutex> cleanup_lock(this->manager_mtx);
-
-                    std::cout << "未出现死锁" << std::endl;
-
-                    auto it_cleanup = this->manager_.find(log_file);
-
-                    std::cout << "找到了" << std::endl;
-                    if (it_cleanup != this->manager_.end()) {
-                        std::cout << "准备移除" << std::endl;
-    #ifdef LOGFILEMANAGER_DEBUG
-                        std::cout << "[AUTO-CLEAN] Log file '" << log_file 
-                                << "' has no activity for 30 mins. Removing..." << std::endl;
-    #endif
-                        // 关闭文件流（析构时自动关闭）
-                        // 从 map 中移除该项
-                        this->manager_.erase(it_cleanup);
-                        std::cout << "已移除" << std::endl;
-                    }
-                });
-        ```
 
 - [ ] 再实现一个RPC和一个客户端，这个客户端用于和服务端通信，控制服务端的行为（一个Web就行！不需要客户端！）
     - UI不使用Qt，而是使用别的开源框架（仍在挑选）

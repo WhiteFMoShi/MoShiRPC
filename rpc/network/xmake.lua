@@ -1,0 +1,16 @@
+target("network")
+    set_kind("object")
+    add_includedirs("include", { public = true })
+    add_files("src/*.cpp")
+
+target("test_event_loop")
+    set_kind("binary")
+    add_includedirs("include")
+    add_files("test/test_event_loop.cpp")
+    add_deps("network")
+
+target("test_socket")
+    set_kind("binary")
+    add_includedirs("include")
+    add_files("test/test_socket.cpp")
+    add_deps("network")

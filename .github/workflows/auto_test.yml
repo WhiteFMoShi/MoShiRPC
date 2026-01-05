@@ -1,0 +1,76 @@
+name: Xmake Auto Test on Push
+
+# 触发器配置：定义工作流何时运行
+on:
+  push:
+    branches: [ "log_revert" ]  # 只有推送到 log_revert 分支时触发
+  pull_request:
+    branches: [ "log_revert" ]  # 也可设置为在向 log_revert 分支提 PR 时触发
+
+# 作业定义：一个工作流可以包含多个作业
+jobs:
+  run-tests:
+    name: Auto test with xmake on Ubuntu
+    runs-on: ubuntu-22.04  # 在 Ubuntu 22.04 环境中运行
+    
+    # 步骤序列：作业按顺序执行的各个操作
+    steps:
+      # 1. 获取代码：将仓库代码检出到运行器
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive  # 递归检出子模块，确保依赖完整
+          fetch-depth: 0  # 获取所有历史记录，有助于版本检测
+
+      # 2. 安装 xmake：使用官方 Action 设置 xmake 环境
+      - name: Setup xmake build system
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest  # 始终使用最新稳定版
+
+      # 3. 缓存优化：缓存 xmake 依赖，大幅加速后续构建
+      - name: Cache xmake dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.xmake
+            $GITHUB_WORKSPACE/.xmake
+          key: ${{ runner.os }}-xmake-${{ hashFiles('xmake.lua') }}
+          restore-keys: |
+            ${{ runner.os }}-xmake-
+
+      # 4. 配置项目：根据 xmake.lua 设置构建参数
+      - name: Configure project
+        run: |
+          xmake f -m debug --tests=y -v  # -v 显示详细配置信息
+
+      # 5. 构建测试目标：编译测试相关的二进制文件
+      - name: Build test targets
+        run: |
+          xmake build test -v  # 只构建 test 目标，提高效率
+          xmake build test_event_loop -v  # 构建特定测试
+          xmake build test_socket -v
+
+      # 6. 执行测试：运行实际的测试程序
+      - name: Run main test suite
+        run: |
+          xmake run test -v  # 运行主测试套件
+
+      - name: Run event loop tests
+        run: |
+          xmake run test_event_loop -v  # 运行事件循环测试
+
+      - name: Run socket tests
+        run: |
+          xmake run test_event_loop -v  # 运行 socket 测试
+
+      # 7. 收集结果：上传测试结果（可选，便于后续分析）
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()  # 即使测试失败也上传结果
+        with:
+          name: test-results
+          path: |
+            build/**/test*
+            build/**/*.log
+          retention-days: 7

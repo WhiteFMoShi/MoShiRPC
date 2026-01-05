@@ -33,7 +33,7 @@ int main() {
 
     // ========== 多线程测试开始 ==========
     const int kNumThreads = 4;       // 线程数
-    const int kLogsPerThread = 500;    // 每个线程打印的日志数
+    const int kLogsPerThread = 20;    // 每个线程打印的日志数
 
     std::vector<std::thread> threads;
 

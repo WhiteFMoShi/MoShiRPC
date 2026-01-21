@@ -1,56 +1,154 @@
+#include <cerrno>
+#include <cstddef>
+#include <cstdint>
+#include <ctime>
+#include <iostream>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <thread>
 #include <unistd.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <system_error>
-// #include <stdexcept>
+#include <fcntl.h>
+#include <cstring>
 
 #include "event_loop.hpp"
 
-EventLoop::EventLoop() {
+EventLoop::EventLoop() : flag_{false} {
     epoll_fd_ = epoll_create1(0);
+    thread_id_ = std::this_thread::get_id();
+
+    // 唤醒fd，用于及时触发epoll_wait，将其改造
+    wakeup_fd_ = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if(wakeup_fd_ < 0) {
+       throw std::system_error(errno, std::generic_category(), "eventfd() failed");
+    }
+    // int flags = fcntl(wakeup_fd_, F_GETFL, 0);
+    // fcntl(wakeup_fd_, F_SETFL, flags | O_NONBLOCK);
     if (epoll_fd_ < 0) {
+        close(wakeup_fd_);
         throw std::system_error(errno, std::generic_category(), "epoll_create1() failed");
     }
     events_.resize(1024);  // 预分配事件数组
-}
 
-EventLoop::~EventLoop() {
-    if (epoll_fd_ >= 0) {
-        close(epoll_fd_);
+    epoll_event ev;
+    ev.events = EPOLLIN;
+    if(epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, wakeup_fd_, &ev)) {
+        close(wakeup_fd_);
+        throw std::system_error(errno, std::generic_category(), "epoll_ctl() add wakeup_fd_ failed");
     }
 }
 
-void EventLoop::add_event(int fd, uint32_t events, EventCallback callback) {
+EventLoop::~EventLoop() {
+    stop();
+    if (epoll_fd_ >= 0) {
+        close(epoll_fd_);
+    }
+    if(wakeup_fd_ >= 0) {
+        close(wakeup_fd_);
+    }
+}
+
+bool EventLoop::add_event(int fd, uint32_t events, EventCallback callback) {
+    if(!verify_thread_id_()) {
+        std::cout << "EventLoop只能由其创建线程进行操作\n"; // 此处还应该添加一个日志
+        return false;
+    }
+
     epoll_event ev{};
     ev.events = events;
     ev.data.fd = fd;
 
     if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev) < 0) {
-        throw std::system_error(errno, std::generic_category(), "epoll_ctl(ADD) failed");
+        return false;
     }
+
     // 保存需要执行的回调函数
     callbacks_[fd] = callback;
+
+    return true;
 }
 
-void EventLoop::remove_event(int fd) {
+bool EventLoop::remove_event(int fd) {
+    if(!verify_thread_id_()) {
+        std::cout << "EventLoop只能由其创建线程进行操作\n"; // 此处还应该添加一个日志
+        return false;
+    }
+
     if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, nullptr) < 0) {
-        throw std::system_error(errno, std::generic_category(), "epoll_ctl(DEL) failed");
+        return false;
     }
     callbacks_.erase(fd);
+    return true;
 }
 
-void EventLoop::run() {
-    while (true) {
+bool EventLoop::run() {
+    // 应该只能由绑定的线程执行
+    if(!verify_thread_id_()) {
+        std::cout << "EventLoop只能由其创建线程进行启动\n"; // 此处应该进行日志写入
+        return false;
+    }
+
+    flag_ = true;
+    while (flag_) {
         int n = epoll_wait(epoll_fd_, events_.data(), events_.size(), -1);
-        if (n < 0) {
-            throw std::system_error(errno, std::generic_category(), "epoll_wait() failed");
-        }
+        // std::cout << "结束阻塞\n";
+        if (n < 0)
+            return false;
 
         for (int i = 0; i < n; ++i) {
             int fd = events_[i].data.fd;
-            uint32_t events = events_[i].events;
-            if (callbacks_.count(fd)) {
-                callbacks_[fd](fd, events);
+            if(fd == wakeup_fd_) { // 如果这是唤醒线程，清除其中的数据就行
+                std::cout << "尝试唤醒并停止\n";
+                size_t buf_size = 128;
+                std::vector<uint64_t> temp_buf(buf_size);
+                ssize_t cnt;
+                while ((cnt = read(wakeup_fd_, &temp_buf, buf_size * 8)) > 0) {
+                    std::cout << "返回值是" << cnt << "\n";
+
+                    temp_buf.clear(); // 数据是没用的，可以直接清除数据
+                    flag_ = false;
+                }
+                // 在很多的系统钟，EAGAIN和EWOULDBLOCK是相同的值
+                // 但是由于历史遗留问题，还是需要同时检查这两个值
+                // https://cloud.tencent.com/developer/ask/sof/105601782
+                if (cnt == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+                    std::cout << "退出错误\n";
+                    throw std::system_error(errno, std::generic_category(),
+                                        "EventLoop run in read() failed");
+                }
+            } // 新事件
+            else {
+                uint32_t events = events_[i].events;
+                if (callbacks_.count(fd)) {
+                    callbacks_[fd](fd, events);
+                }
             }
         }
+    }
+    return true;
+}
+
+bool EventLoop::stop() {
+    wakeup_(); // 先唤醒epoll_wait
+    return flag_ == false;
+}
+
+bool EventLoop::run_status() const {
+    return flag_;
+}
+
+bool EventLoop::verify_thread_id_() const {
+    return std::this_thread::get_id() == thread_id_;
+}
+
+void EventLoop::wakeup_() {
+    uint64_t one = 1;
+    ssize_t n = ::write(wakeup_fd_, &one, sizeof(one)); // 必须写入 8 字节
+    if (n != sizeof(one)) { // 错误处理：检查是否成功写入 8 字节
+        // 处理写入错误，例如记录日志
+        // LOG_ERROR << "EventLoop::wakeup() wrote " << n << " bytes instead of " << sizeof(one);
+        std::cout << "EventLoop::wakeup_() wrote error\n";
     }
 }

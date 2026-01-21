@@ -7,20 +7,16 @@
 
 #include "tcpsocket.hpp"
 
-namespace {
-    std::string module = "rpc/network";
-}
-
 TcpSocket::TcpSocket() {
-    listen_fd_ = socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_fd_ < 0) {
+    fd_ = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd_ < 0) {
         throw std::system_error(errno, std::generic_category(), "socket() failure");
     }
 }
 
 TcpSocket::~TcpSocket() {
-    if (listen_fd_ >= 0) {
-        ::close(listen_fd_);
+    if (fd_ >= 0) {
+        ::close(fd_);
     }
 }
 
@@ -30,11 +26,11 @@ void TcpSocket::listen(const std::string& ip, uint16_t port, int backlog) {
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
 
-    if (bind(listen_fd_, (sockaddr*)&addr, sizeof(addr)) < 0) {
+    if (bind(fd_, (sockaddr*)&addr, sizeof(addr)) < 0) {
         throw std::system_error(errno, std::generic_category(), "bind() failure");
     }
 
-    if (::listen(listen_fd_, backlog) < 0) {
+    if (::listen(fd_, backlog) < 0) {
         throw std::system_error(errno, std::generic_category(), "listen() failure");
     }
 }
@@ -43,7 +39,7 @@ int TcpSocket::accept(std::string& client_ip, uint16_t& client_port) {
     sockaddr_in client_addr{};
     socklen_t addr_len = sizeof(client_addr);
 
-    int client_fd = ::accept(listen_fd_, (sockaddr*)&client_addr, &addr_len);
+    int client_fd = ::accept(fd_, (sockaddr*)&client_addr, &addr_len);
     if (client_fd < 0) {
         throw std::system_error(errno, std::generic_category(), "accept() failure");
     }
@@ -59,7 +55,7 @@ void TcpSocket::connect(const std::string& ip, uint16_t port) {
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
 
-    if (::connect(listen_fd_, (sockaddr*)&addr, sizeof(addr)) < 0) {
+    if (::connect(fd_, (sockaddr*)&addr, sizeof(addr)) < 0) {
         throw std::system_error(errno, std::generic_category(), "connect() failure");
     }
 }

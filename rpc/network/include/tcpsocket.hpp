@@ -2,6 +2,9 @@
 
 #include <string>
 
+/**
+ * @brief 只实现了Socket的最最最最基础的封装
+ */
 class TcpSocket {
 public:
     TcpSocket();
@@ -26,8 +29,8 @@ public:
     // 关闭 Socket
     void close(int fd);
 
-    int get_sockfd() const { return listen_fd_; }
+    int get_sockfd() const { return fd_; }
 
 private:
-    int listen_fd_ = -1;  // 监听 Socket 的文件描述符
+    int fd_ = -1;  // 监听 Socket 的文件描述符
 };

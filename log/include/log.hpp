@@ -19,7 +19,7 @@ enum class LogLevel : int {
 
 class Log {
 public:
-    static Log& getInstance();
+    static Log& get_instance();
 
     /**
      * @brief 向日志队列中添加一条日志条目
@@ -31,7 +31,8 @@ public:
      *            该情况可能发生在多线程环境下。
      * @note 该函数可能会同时在terminal中打印日志，这取决于log.config是如何定义log行为的
      */
-    void addLog(LogLevel level, std::string module, const std::string& msg);
+    void add_log(LogLevel level, const std::string& module, const std::string& msg);
+    void add_log(LogLevel level, std::string&& module, std::string&& msg);
 
     /**
      * @brief 仅将日志信息打印到终端，而不写入到文件中

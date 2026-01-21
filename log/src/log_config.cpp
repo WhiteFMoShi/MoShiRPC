@@ -13,41 +13,41 @@
 
 // #define LOGCONFIG_DEBUG
 
-bool LogConfig::usingThreadpool() const {
+bool LogConfig::using_threadpool() const {
     // 不能使用"[]",它是非const的，因为会默认插入被访问但是不存在的键
     // 此处需要使用at，因为at不存在这一点，它只是一个访问器，并且它具有越界检查
     // 我有一个at包装器(keyToValue)
-    return std::any_cast<bool>(keyToValue_("asynchronous"));
+    return std::any_cast<bool>(key_to_value_("asynchronous"));
 }
 
-int LogConfig::threadNumber() const {
-    return std::any_cast<int>(keyToValue_("thread_number"));
+int LogConfig::thread_number() const {
+    return std::any_cast<int>(key_to_value_("thread_number"));
 }
 
 bool LogConfig::terminal_print() const {
-    return std::any_cast<bool>(keyToValue_("terminal_print"));
+    return std::any_cast<bool>(key_to_value_("terminal_print"));
 }
 
-std::string LogConfig::logDir() const {
-    return std::any_cast<std::string>(keyToValue_("log_dir_relative_path"));
+std::string LogConfig::get_logdir() const {
+    return std::any_cast<std::string>(key_to_value_("log_dir_relative_path"));
 }
 
 // 单例接口
-LogConfig& LogConfig::getConfig() {
+LogConfig& LogConfig::get_config_instance() {
     static LogConfig config;
     return config;
 }
 
 LogConfig::LogConfig(std::string conf_dir, std::string configfile_name) {
-    workspace_ = getWorkSpace();
+    workspace_ = get_workspace();
     config_file_name_ = configfile_name;
     conf_dir_ = conf_dir;
     config_file_full_path_ = workspace_ + conf_dir + "/" + config_file_name_; // log.config路径
 
-    setConfig_();
+    set_config_();
 }
 
-std::string LogConfig::getWorkSpace() const {
+std::string LogConfig::get_workspace() const {
     std::string workdir(std::filesystem::current_path());
 #ifdef  LOGCONFIG_DEBUG
     std::cout << "Workspace: " << workdir << std::endl;
@@ -55,7 +55,7 @@ std::string LogConfig::getWorkSpace() const {
     return workdir;
 }
 
-bool LogConfig::setConfig_() {
+bool LogConfig::set_config_() {
     std::fstream file_stream;
 
     file_stream.open(config_file_full_path_, std::ios_base::in); // 只读模式
@@ -84,21 +84,21 @@ bool LogConfig::setConfig_() {
                 std::cout << "---------------" << std::endl;
 #endif
             }
-            toLower_(key); // 键全部变为小写
+            to_lower_(key); // 键全部变为小写
             
             if (!config_.count(key)) { // Skip if key is not in predefined config
                 continue;
             }
 
-            if(keyToValue_(key).type() == typeid(int))
+            if(key_to_value_(key).type() == typeid(int))
                 config_[key] = std::stoi(value_str);
-            else if(keyToValue_(key).type() == typeid(std::string)) { // 修改: 检查 std::string 类型
+            else if(key_to_value_(key).type() == typeid(std::string)) { // 修改: 检查 std::string 类型
                 config_[key] = value_str; // 修改: 直接存储 std::string
 #ifdef  LOGCONFIG_DEBUG
                 std::cout << "in string setting that > " << key << " : "<< value_str << std::endl;
 #endif
             }
-            else if(keyToValue_(key).type() == typeid(bool))
+            else if(key_to_value_(key).type() == typeid(bool))
                 config_[key] = (value_str == "true" ? true : false);
         }
 
@@ -117,7 +117,7 @@ bool LogConfig::setConfig_() {
         // 向其中添加配置信息
         for(const auto& key : sequence_) {
             file_stream << key << ": ";
-            auto value = keyToValue_(key);
+            auto value = key_to_value_(key);
             if(value.type() == typeid(bool)) {
                 file_stream << (std::any_cast<bool>(value) ? "true" : "false") << std::endl;
             }
@@ -167,11 +167,11 @@ const std::string LogConfig::trim_(std::string& str) {
     return "";
 }
 
-void LogConfig::toLower_(std::string& str) {
+void LogConfig::to_lower_(std::string& str) {
     for(auto& c : str)
         c = std::tolower(c);
 }
 
-std::any LogConfig::keyToValue_(const std::string& key) const {
+std::any LogConfig::key_to_value_(const std::string& key) const {
     return config_.at(key);
 }

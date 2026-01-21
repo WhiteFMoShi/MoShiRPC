@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <mutex>
 #include <future>
@@ -24,15 +25,15 @@ const std::string Log::COLOR_ERROR = "\033[31m";
 const std::string Log::COLOR_CRITICAL = "\033[1;5;31m";
 const std::string Log::COLOR_RESET = "\033[0m";
 
-Log& Log::getInstance() {
+Log& Log::get_instance() {
     static Log log_;
     std::cout << "creating log instance..." << std::endl;
-    log_.addLog(LogLevel::Info, "LOG", "Logger init...");
+    log_.add_log(LogLevel::Info, "LOG", "Logger init...");
     return log_;
 }
 
 struct Log::Impl {
-    Impl() : log_config_(LogConfig::getConfig()) {}
+    Impl() : log_config_(LogConfig::get_config_instance()) {}
 
     class LogWriter {
     public:
@@ -72,7 +73,7 @@ std::future<bool> Log::Impl::LogWriter::operator()(Log& log) {
             std::unique_lock<std::mutex> lock(impl.mtx_);
 
             if (!impl.buffer_.empty()) {
-                LogEntry entry = impl.buffer_.front_and_pop();
+                LogEntry entry = std::move(impl.buffer_.front_and_pop());
                 lock.unlock();
                 
 #ifdef LOG_DEBUG
@@ -114,9 +115,9 @@ void Log::Impl::output_log_(const std::string& color, const std::string& level_s
 Log::Log() : pimpl_(std::make_unique<Impl>()) {
     pimpl_->flag_ = true;
     
-    if (pimpl_->log_config_.usingThreadpool()) {
-        pimpl_->pool_.resize(pimpl_->log_config_.threadNumber());
-        for (int i = 0; i < pimpl_->log_config_.threadNumber(); i++) {
+    if (pimpl_->log_config_.using_threadpool()) {
+        pimpl_->pool_.resize(pimpl_->log_config_.thread_number());
+        for (int i = 0; i < pimpl_->log_config_.thread_number(); i++) {
             Impl::LogWriter f;
             pimpl_->pool_[i] = f(*this);
 #ifdef LOG_DEBUG
@@ -126,18 +127,17 @@ Log::Log() : pimpl_(std::make_unique<Impl>()) {
     }
 }
 
-void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
+void Log::add_log(LogLevel level, const std::string& module, const std::string& msg) {
     if (!pimpl_->flag_) throw std::runtime_error("[log.cpp::addLog()] Logger is closed!!!");
 
     if(pimpl_->log_config_.terminal_print()) {
         terminal_log(level, module, msg);
     }
 
-    LogEntry entry(level, module, msg);
-
-    if (pimpl_->log_config_.usingThreadpool()) {
+    if (pimpl_->log_config_.using_threadpool()) {
         std::lock_guard<std::mutex> lock(pimpl_->mtx_);
-        pimpl_->buffer_.push(entry);
+        // 直接在队列中构造，避免不必要的拷贝
+        pimpl_->buffer_.push(LogEntry(level, module, msg));
         pimpl_->cv_.notify_one();
         
 #ifdef LOG_DEBUG
@@ -145,7 +145,29 @@ void Log::addLog(LogLevel level, std::string module, const std::string& msg) {
         pimpl_->debug("Entry added: " + msg);
 #endif
     } else {
-        pimpl_->manager_.writeInFile(entry);
+        pimpl_->manager_.writeInFile(LogEntry(level, module, msg));
+    }
+}
+
+void Log::add_log(LogLevel level, std::string&& module, std::string&& msg) {
+    if (!pimpl_->flag_) throw std::runtime_error("[log.cpp::addLog()] Logger is closed!!!");
+
+    if(pimpl_->log_config_.terminal_print()) {
+        terminal_log(level, module, msg);
+    }
+
+    if (pimpl_->log_config_.using_threadpool()) {
+        std::lock_guard<std::mutex> lock(pimpl_->mtx_);
+        // 使用移动语义优化，直接在队列中构造
+        pimpl_->buffer_.push(LogEntry(level, std::move(module), std::move(msg)));
+        pimpl_->cv_.notify_one();
+        
+#ifdef LOG_DEBUG
+        pimpl_->debug("Buffer size: " + std::to_string(pimpl_->buffer_.size()));
+        pimpl_->debug("Entry added with move semantics");
+#endif
+    } else {
+        pimpl_->manager_.writeInFile(LogEntry(level, std::move(module), std::move(msg)));
     }
 }
 
@@ -160,9 +182,9 @@ void moshi::Log::terminal_log(LogLevel level, const std::string& module, const s
 }
 
 void Log::close() {
-    addLog(LogLevel::Info, "LOG", "logger is destoried...");
+    add_log(LogLevel::Info, "LOG", "logger is destoried...");
     // 若是使用了线程池就清理线程池中的所有条目
-    if (pimpl_->log_config_.usingThreadpool()) {
+    if (pimpl_->log_config_.using_threadpool()) {
         pimpl_->flag_ = false;
         pimpl_->cv_.notify_all();
         for (auto& fut : pimpl_->pool_) 

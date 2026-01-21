@@ -1,66 +1,124 @@
-#include <chrono>
-#include <atomic>
-#include <future>
-#include <unistd.h>
-#include <vector>
 #include <iostream>
-
+#include <chrono>
+#include <thread>
+#include <vector>
+#include <atomic>
 #include "log.hpp"
 
 using namespace moshi;
 
-void test_log_performance() {
-    Log& logger = Log::getInstance();
-    constexpr int PRODUCER_THREADS = 2; // 生产者线程数量
-    constexpr int LOGS_PER_THREAD = 500000;
-    std::atomic<int> counter{0};
+// 测试参数
+const int NUM_THREADS = 4;
+const int LOGS_PER_THREAD = 10000;
+const int TOTAL_LOGS = NUM_THREADS * LOGS_PER_THREAD;
 
-    std::cout << "生产者线程数: " << PRODUCER_THREADS << " , 每个线程产生 " << LOGS_PER_THREAD << " 条log" << std::endl;
-    // 记录每个线程的耗时，精确到毫秒
-    std::vector<std::chrono::milliseconds> thread_durations(PRODUCER_THREADS);
+// 原子计数器
+std::atomic<int> counter{0};
 
-    // 准备阶段
+void benchmark_single_thread() {
+    std::cout << "=== 单线程性能测试 ===" << std::endl;
+    
+    auto& logger = Log::get_instance();
     auto start = std::chrono::high_resolution_clock::now();
+    
+    for (int i = 0; i < TOTAL_LOGS; ++i) {
+        logger.add_log(LogLevel::Info, "BENCHMARK", 
+                      "Log entry " + std::to_string(i));
+    }
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    
+    std::cout << "总日志数: " << TOTAL_LOGS << std::endl;
+    std::cout << "耗时: " << duration.count() << " ms" << std::endl;
+    std::cout << "吞吐量: " << (TOTAL_LOGS * 1000.0 / duration.count()) << " logs/s" << std::endl;
+    std::cout << std::endl;
+}
 
-    // 创建生产者线程
-    std::vector<std::future<void>> producers;
-    for (int i = 0; i < PRODUCER_THREADS; ++i) {
-        producers.push_back(std::async(std::launch::async, [&, i] {
+void benchmark_multi_thread() {
+    std::cout << "=== 多线程性能测试 ===" << std::endl;
+    
+    auto& logger = Log::get_instance();
+    std::vector<std::thread> threads;
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    for (int i = 0; i < NUM_THREADS; ++i) {
+        threads.emplace_back([&logger, i]() {
             auto thread_start = std::chrono::high_resolution_clock::now();
             for (int j = 0; j < LOGS_PER_THREAD; ++j) {
-                logger.addLog(LogLevel::Info, "TEST", 
-                    "Log entry " + std::to_string(counter++));
+                logger.add_log(LogLevel::Info, "BENCHMARK", 
+                              "Log entry " + std::to_string(counter++));
             }
             auto thread_end = std::chrono::high_resolution_clock::now();
-            thread_durations[i] = std::chrono::duration_cast<std::chrono::milliseconds>(thread_end - thread_start);
-        }));
+            auto thread_duration = std::chrono::duration_cast<std::chrono::milliseconds>(thread_end - thread_start);
+            std::cout << "线程 " << i << " 完成, 耗时: " << thread_duration.count() << " ms" << std::endl;
+        });
     }
-
-    // 等待所有生产者完成
-    for (auto& producer : producers) {
-        producer.wait();
+    
+    for (auto& thread : threads) {
+        thread.join();
     }
-
-    // 结束阶段
-    // logger.close(); // 想要测试需要更改源代码，将close函数暴露
-
+    
     auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    
+    std::cout << "总日志数: " << TOTAL_LOGS << std::endl;
+    std::cout << "线程数: " << NUM_THREADS << std::endl;
+    std::cout << "总耗时: " << duration.count() << " ms" << std::endl;
+    std::cout << "吞吐量: " << (TOTAL_LOGS * 1000.0 / duration.count()) << " logs/s" << std::endl;
+    std::cout << std::endl;
+}
 
-    // 统计结果
-    auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-    std::cout << "总日志量: " << PRODUCER_THREADS * LOGS_PER_THREAD << "\n"
-              << "总耗时: " << total_duration.count() << " ms\n"
-              << "QPS: " << (PRODUCER_THREADS * LOGS_PER_THREAD * 1000) / total_duration.count() 
-              << " 条/秒\n";
-
-    // 输出每个线程的耗时
-    for (int i = 0; i < PRODUCER_THREADS; ++i) {
-        std::cout << "线程 " << i << " addLog花费时间: " << thread_durations[i].count() << " ms\n";
+void benchmark_move_semantics() {
+    std::cout << "=== 移动语义优化测试 ===" << std::endl;
+    
+    auto& logger = Log::get_instance();
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    // 测试移动语义优化：使用临时字符串
+    for (int i = 0; i < TOTAL_LOGS / 10; ++i) {
+        // 使用临时字符串，应该会触发移动语义优化
+        std::string module = "MODULE_" + std::to_string(i % 10);
+        std::string msg = "Message with number: " + std::to_string(i);
+        
+        logger.add_log(LogLevel::Debug, std::move(module), std::move(msg));
     }
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    
+    std::cout << "移动语义测试日志数: " << TOTAL_LOGS / 10 << std::endl;
+    std::cout << "耗时: " << duration.count() << " ms" << std::endl;
+    std::cout << "吞吐量: " << (TOTAL_LOGS * 100.0 / duration.count()) << " logs/s" << std::endl;
+    std::cout << std::endl;
 }
 
 int main() {
-    test_log_performance();
+    std::cout << "开始log库性能基准测试..." << std::endl;
+    std::cout << "测试配置:" << std::endl;
+    std::cout << "- 线程数: " << NUM_THREADS << std::endl;
+    std::cout << "- 每线程日志数: " << LOGS_PER_THREAD << std::endl;
+    std::cout << "- 总日志数: " << TOTAL_LOGS << std::endl;
+    std::cout << std::endl;
+    
+    // 等待log系统初始化
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    
+    // 运行测试
+    benchmark_single_thread();
+    
+    // 重置计数器
+    counter = 0;
+    
+    benchmark_multi_thread();
+    
+    benchmark_move_semantics();
+    
+    std::cout << "性能测试完成!" << std::endl;
+    
+    // 等待所有日志写入完成
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    
     return 0;
 }

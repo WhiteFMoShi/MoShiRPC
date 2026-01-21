@@ -5,22 +5,24 @@
 #include <unordered_map>
 #include <vector>
 
+#include <cjson/cJSON.h>
+
 // 只适合有一个config，所以单例模式是最好的
 class LogConfig {
 public:
     // 是否使用线程池
-    bool usingThreadpool() const;
+    bool using_threadpool() const;
     // 设定的线程数
-    int threadNumber() const;
+    int thread_number() const;
     // 是否在addLog时同步在终端中打印？
     bool terminal_print() const;
     // 日志存储文件夹（前有'/'）
-    std::string logDir() const;
+    std::string get_logdir() const;
     // 获取makefile所在的目录（默认直接make而不使用-file指定）
-    std::string getWorkSpace() const;
+    std::string get_workspace() const;
 
     // 单例获取
-    static LogConfig& getConfig();
+    static LogConfig& get_config_instance();
 private:
     /*
         Log.Config的信息，用于找到配置文件
@@ -53,12 +55,12 @@ private:
     LogConfig operator=(LogConfig&&) = delete;
     
     // 获取log.config中的配置信息
-    bool setConfig_();
+    bool set_config_();
     // 去除字符串前后的空格
     const std::string trim_(std::string& str); 
     // 将字符串统一转换成小写
-    void toLower_(std::string& str);
+    void to_lower_(std::string& str);
     
-    std::any keyToValue_(const std::string&) const;
+    std::any key_to_value_(const std::string&) const;
 };
 

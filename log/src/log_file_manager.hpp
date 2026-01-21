@@ -16,6 +16,7 @@ public:
     ~LogFileManager();
 
     void writeInFile(const LogEntry&);
+    void writeInFile(LogEntry&& entry);
 private:
     std::string log_dir_; // 末尾带有"/"
     std::mutex manager_mtx;

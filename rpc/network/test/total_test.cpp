@@ -48,7 +48,7 @@ TEST_F(EventLoopTest, EventLoopStopTest) {
     std::thread([&] {
         loop = new EventLoop();
 
-        ASSERT_EQ(loop->run(), true);
+        ASSERT_EQ(loop->start(), true);
     }).detach();
 
 
@@ -82,13 +82,13 @@ TEST_F(EventLoopTest, BasicConnectAndReceive) {
         }
 
         // 1. 注册事件回调
-        loop.add_event(server.get_sockfd(), EPOLLIN, [&](int fd, uint32_t events) {
+        loop.add_channel(server.get_sockfd(), EPOLLIN, [&](int fd, uint32_t events) {
             std::string client_ip;
             uint16_t client_port;
             int client_fd = server.accept(client_ip, client_port);
 
             // 为新连接的客户端socket注册读事件
-            loop.add_event(client_fd, EPOLLIN, [&, client_fd](int fd, uint32_t events) {
+            loop.add_channel(client_fd, EPOLLIN, [&, client_fd](int fd, uint32_t events) {
                 char buff[256];
                 ssize_t len = server.recv(client_fd, buff, sizeof(buff) - 1);
                 if (len > 0) {
@@ -107,7 +107,7 @@ TEST_F(EventLoopTest, BasicConnectAndReceive) {
         server_ready_promise.set_value(true);
 
         // 3. 启动事件循环（这会阻塞，直到 loop.stop() 被调用）
-        loop.run();
+        loop.start();
     });
 
     // 主线程：等待服务器线程准备好
@@ -134,8 +134,8 @@ TEST_F(EventLoopTest, BasicConnectAndReceive) {
 TEST_F(EventLoopTest, MultipleCallingRunAndStop) {
     std::thread([&] {
         loop = new EventLoop();
-        EXPECT_TRUE(loop->run());
-        EXPECT_TRUE(loop->run());
+        EXPECT_TRUE(loop->start());
+        EXPECT_TRUE(loop->start());
     }).detach();
 
     sleep(1);

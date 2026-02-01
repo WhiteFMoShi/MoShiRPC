@@ -11,7 +11,7 @@
 
 #include "channel.hpp"
 
-class Channel;
+class Channel; // 向前声明 channel.hpp
 
 /**
  * @brief 事件触发器
@@ -40,7 +40,8 @@ public:
      * @return true 
      * @return false 
      */
-    bool add_event(int fd, uint32_t events, EventCallback callback);
+    bool add_channel(int fd,std::shared_ptr<Channel> channel);
+
     /**
      * @brief 不再监听fd上到来的事件，专注于删除监听事件，不会关闭文件描述符
      * 
@@ -48,7 +49,9 @@ public:
      * @return true 
      * @return false 
      */
-    bool remove_event(int fd);
+    bool remove_channel(int fd);
+
+    bool reset_channel(int fd, std::shared_ptr<Channel> channel);
 
     /**
      * @brief 启动EventLoop
@@ -57,10 +60,13 @@ public:
      * @return true 
      * @return false 因为异常原因，EventLoop启动失败
      */
-    bool run();
+    bool start();
 
     // 停止事件循环
-    bool stop();
+    bool stop() {
+        wakeup_(); // 先唤醒epoll_wait
+        return flag_ == false;
+    };
 
     /**
      * @brief 获取当前的运行状态
@@ -68,7 +74,7 @@ public:
      * @return true 正在运行中
      * @return false 处于停止状态
      */
-    bool run_status() const;
+    bool get_run_status() const { return flag_; };
 
 private:
     /**
@@ -77,16 +83,18 @@ private:
      * @return true 
      * @return false 
      */
-    bool verify_thread_id_() const;
+    bool verify_thread_id_() const {
+        return std::this_thread::get_id() == default_thread_id_;
+    }
 
     void wakeup_();
 private:
+    std::atomic<int> flag_;
+    std::thread::id default_thread_id_; // 绑定线程ID
+    
     int epoll_fd_;
     int wakeup_fd_; // 非阻塞IO
     
-    std::atomic<int> flag_;
-    std::thread::id thread_id_; // 绑定线程ID
-
     std::vector<epoll_event> events_; // 用于存储epoll_wait返回的就绪事件
-    std::unordered_map<int, std::shared_ptr<Channel>> callbacks_; // 文件描述符和对应的事件触发器
+    std::unordered_map<int, std::shared_ptr<Channel>> channel_; // <fd, Channel>
 };

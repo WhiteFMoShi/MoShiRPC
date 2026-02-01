@@ -29,7 +29,7 @@ int main() {
 
         char buff[256];
 
-        loop->add_event(server.get_sockfd(), EPOLLIN, [&](int fd, uint32_t events) {
+        loop->add_channel(server.get_sockfd(), EPOLLIN, [&](int fd, uint32_t events) {
             std::string client_ip;
             uint16_t client_port;
             int client_fd = server.accept(client_ip, client_port);
@@ -39,7 +39,7 @@ int main() {
             printf("%s\n", buff);
         });
 
-        loop->run();
+        loop->start();
     });
 
     sleep(5);

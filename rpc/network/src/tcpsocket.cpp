@@ -7,6 +7,8 @@
 
 #include "tcpsocket.hpp"
 
+using moshi::TcpSocket;
+
 TcpSocket::TcpSocket() {
     fd_ = socket(AF_INET, SOCK_STREAM, 0);
     if (fd_ < 0) {

@@ -9,7 +9,7 @@
 #include <atomic>
 #include <unordered_map>
 
-#include "channel.hpp"
+namespace moshi {
 
 class Channel; // 向前声明 channel.hpp
 
@@ -98,3 +98,5 @@ private:
     std::vector<epoll_event> events_; // 用于存储epoll_wait返回的就绪事件
     std::unordered_map<int, std::shared_ptr<Channel>> channel_; // <fd, Channel>
 };
+
+} // namespace moshi

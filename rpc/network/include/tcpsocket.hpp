@@ -2,6 +2,7 @@
 
 #include <string>
 
+namespace moshi {
 /**
  * @brief 只实现了Socket的最最最最基础的封装
  */
@@ -34,3 +35,5 @@ public:
 private:
     int fd_ = -1;  // 监听 Socket 的文件描述符
 };
+
+} // namespace moshi

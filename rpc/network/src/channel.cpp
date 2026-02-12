@@ -1,6 +1,8 @@
 #include "channel.hpp"
 #include "event_loop.hpp"
 
+using moshi::Channel;
+
 void Channel::handle_event() const {
     if(epoll_events_.events & EPOLLERR) { // 错误拥有最高的优先级
         handle_error();

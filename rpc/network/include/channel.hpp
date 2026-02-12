@@ -6,6 +6,8 @@
 
 // class EventLoop;
 
+namespace moshi{
+
 class Channel {
 public:
     void set_fd(int fd) { fd_ = fd; }
@@ -40,3 +42,5 @@ private:
     epoll_event epoll_events_;
     int fd_;
 };
+
+} // namespace moshi

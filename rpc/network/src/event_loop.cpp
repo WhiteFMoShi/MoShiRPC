@@ -14,6 +14,10 @@
 #include <cstring>
 
 #include "event_loop.hpp"
+#include "channel.hpp"
+
+using moshi::EventLoop;
+using moshi::Channel;
 
 EventLoop::EventLoop() : default_thread_id_(std::this_thread::get_id()), flag_{false} {
     epoll_fd_ = epoll_create1(0);

@@ -7,10 +7,10 @@
 #include "cJSON/cJSON.h"
 
 namespace moshi {
-const uint32_t PROTOCOL_VERSION_1 = 0x6A5D4C7E;
-constexpr int HEADER_LENGTH = 2 * sizeof(uint32_t);
+static const uint32_t PROTOCOL_VERSION_1 = 0x6A5D4C7E;
+static constexpr int HEADER_LENGTH = 2 * sizeof(uint32_t);
 
-constexpr uint32_t MAX_ALLOWED_LENGTH = 1024 * 1024; // 1MB
+static constexpr uint32_t MAX_ALLOWED_LENGTH = 1024 * 1024; // 1MB
 
 class Protocol {
     friend Protocol Deserialize(std::vector<char>, int& p);

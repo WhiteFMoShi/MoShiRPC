@@ -11,7 +11,7 @@ void thread_log_task(Log& logger, const std::string& thread_name, int num_logs) 
         LogLevel level = static_cast<LogLevel>(i % 5); // 循环使用 Debug -> Critical
         std::string msg = "Thread [" + thread_name + "] log #" + std::to_string(i) +
                           ", level: " + std::to_string(static_cast<int>(level));
-        logger.addLog(level, thread_name, msg);
+        logger.add_log(level, thread_name, msg);
 
         // 模拟一些工作负载，增加并发交错的可能性
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -19,7 +19,7 @@ void thread_log_task(Log& logger, const std::string& thread_name, int num_logs) 
 }
 
 int main() {
-    Log& logger = Log::getInstance();
+    Log& logger = Log::get_instance();
 
     // // 先测试单线程（可选，和你原来的代码一样）
     // logger.addLog(LogLevel::Info, "main", "This is a single-thread info log.");

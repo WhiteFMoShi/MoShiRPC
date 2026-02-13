@@ -15,9 +15,9 @@
 // #define LOGFILEMANAGER_DEBUG
 
 LogFileManager::LogFileManager() {
-    const LogConfig& config = LogConfig::getInstance();
+    const LogConfig& config = LogConfig::get_config_instance();
 
-    log_dir_ = config.getWorkspacePath() / config.getLogDirectory() / "";
+    log_dir_ = config.get_workspace() + config.get_logdir() + "/";
 
     std::cout << "Log Dir is: " << log_dir_ << std::endl;
     if(std::filesystem::exists(log_dir_) == false && std::filesystem::create_directories(log_dir_))
@@ -56,8 +56,8 @@ void LogFileManager::writeInFile(const LogEntry& entry) {
                 throw std::runtime_error("Failed to open log file: " + log_file);
             }
 
-            // 启动一个 30 分钟的定时器
-            timer_ptr->start_min(30, [this, log_file]() {
+            // 启动一个 1分钟的定时器（原定是30分钟，但是这对于一个系统来说有点太久了）
+            timer_ptr->start_min(1, [this, log_file]() {
 
                 // 定时器超时回调（注意：运行在 worker 线程中！）
                 std::lock_guard<std::mutex> cleanup_lock(this->manager_mtx);
@@ -101,4 +101,9 @@ void LogFileManager::writeInFile(const LogEntry& entry) {
             }
         }
     }
+}
+
+void LogFileManager::writeInFile(LogEntry&& entry) {
+    // 直接调用左值版本，因为getMsg()返回引用，没有额外开销
+    writeInFile(entry);
 }

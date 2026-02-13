@@ -9,9 +9,14 @@ bool LogQueue::empty() {
 }
 
 // 向队列中推入一个元素
-void LogQueue::push(LogEntry entry) {
+void LogQueue::push(const LogEntry& entry) {
     std::lock_guard<std::mutex> lock(push_mtx_);
     q_.push(entry);
+}
+
+void LogQueue::push(LogEntry&& entry) {
+    std::lock_guard<std::mutex> lock(push_mtx_);
+    q_.push(std::move(entry));
 }
 
 // 获取队列的大小
@@ -28,7 +33,7 @@ LogEntry LogQueue::front_and_pop() {
         // 这里可以根据实际需求处理队列为空的情况，例如抛出异常或返回默认构造的 LogEntry
         throw std::runtime_error("Queue is empty!!!");
     }
-    LogEntry front = q_.front();
+    LogEntry front = std::move(q_.front());
     q_.pop();
     return front;
 }

@@ -9,7 +9,10 @@
 class LogQueue {
 public:
     bool empty();
-    void push(LogEntry entry);
+
+    void push(const LogEntry& entry);
+    void push(LogEntry&& entry);
+
     int size();
     LogEntry front_and_pop();
 

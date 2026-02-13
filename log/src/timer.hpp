@@ -38,7 +38,6 @@ public:
      */
     void stop();
 private:
-    OnTimeCallback callback_;
     std::atomic<bool> running_ = false;
 
     std::mutex mtx_;

@@ -1,0 +1,23 @@
+{
+    "name": "MoShiRPC_Dev",
+    "dockerFile": "./Dockerfile",
+    "context": "..",
+    "workspaceFolder": "/workspace",
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace,type=bind"
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "llvm-vs-code-extensions.vscode-clangd",
+                "vadimcn.vscode-lldb"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "cmake.cmakePath": "/usr/bin/cmake",
+                "cmake.buildDirectory": "/tmp/build"
+            }
+        }
+    },
+    "postCreateCommand": "clangd --version"
+}

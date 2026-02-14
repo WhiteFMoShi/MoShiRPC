@@ -5,25 +5,20 @@
     "workspaceFolder": "/workspace",
     "mounts": [
         "source=${localWorkspaceFolder},target=/workspace,type=bind",
-        "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached",
-        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+        "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"
     ],
     "runArgs": [
         "--init"
     ],
+    "initializeCommand": "if [ -f ${localEnv:HOME}/.gitconfig ]; then cp ${localEnv:HOME}/.gitconfig /tmp/gitconfig_for_container; fi",
     "customizations": {
         "vscode": {
             "extensions": [
-                "llvm-vs-code-extensions.vscode-clangd",
-                "vadimcn.vscode-lldb",
-                "MarsCode.marscode-extension"
-            ],
+                "llvm-vs-code-extensions.vscode-clangd"            ],
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash",
-                "cmake.cmakePath": "/usr/bin/cmake",
-                "cmake.buildDirectory": "/tmp/build",
             }
         }
     },
-    "postCreateCommand": "git config --global --add safe.directory /workspace && clangd --version"
+    "postCreateCommand": "chmod 700 /root/.ssh && chmod 600 /root/.ssh/* && if [ -f /tmp/gitconfig_for_container ]; then cp /tmp/gitconfig_for_container /root/.gitconfig; fi && git config --global --add safe.directory /workspace"
 }

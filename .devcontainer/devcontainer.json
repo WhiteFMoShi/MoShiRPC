@@ -8,15 +8,23 @@
         "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"
     ],
     "runArgs": [
-        "--init"
+        "--init",
+        "--dns", "8.8.8.8"
     ],
     "initializeCommand": "if [ -f ${localEnv:HOME}/.gitconfig ]; then cp ${localEnv:HOME}/.gitconfig /tmp/gitconfig_for_container; fi",
     "customizations": {
         "vscode": {
             "extensions": [
-                "llvm-vs-code-extensions.vscode-clangd"            ],
+                "llvm-vs-code-extensions.vscode-clangd",
+                "MS-CEINTL.vscode-language-pack-zh-hans",
+                "Codeium.codeium"
+            ],
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash",
+                "extensions.autoUpdate": false,
+                "extensions.autoCheckUpdates": false,
+                "clangd.path": "/usr/bin/clangd",
+                "clangd.arguments": ["--background-index"],
             }
         }
     },

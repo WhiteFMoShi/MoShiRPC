@@ -37,7 +37,15 @@ RUN apt update && apt install -y \
     rm -rf /var/lib/apt/lists/*
 
 # 安装xmake
-RUN wget https://xmake.io/shget.text -O - | bash
+RUN curl -fsSL https://xmake.io/shget.text -o install.sh && \
+    bash install.sh && \
+    rm install.sh && \
+    echo 'export PATH=~/.local/bin:$PATH' >> ~/.bashrc && \
+    echo 'export PATH=~/.local/bin:$PATH' >> /root/.bashrc && \
+    ln -sf ~/.local/bin/xmake /usr/local/bin/xmake
+
+# 设置环境变量
+ENV PATH=~/.local/bin:$PATH
 
 # 设置工作目录
 WORKDIR /workspace

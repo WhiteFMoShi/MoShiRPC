@@ -5,6 +5,9 @@
 compile_commands.json
 build
 
+# macOS的💩
+.DS_Store
+
 # 开源库部分
 third_party/cJSON
 third_party/spdlog

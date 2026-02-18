@@ -1,70 +1,49 @@
 #pragma once
 
-#include <string>
 #include <sys/types.h>
-#include <vector>
 
+namespace moshi {
 /**
  * @brief 缓冲区节点,进行数据的实际存储
  * 
  */
 struct BufferNode {
-    BufferNode(uint node_size) : next(nullptr), prev(nullptr), 
-                                MORE_FLAG(false), HEAD_FLAG(false), TAIL_FLAG(false), 
-                                used_size(0), read_offset(0), write_offset(0), 
-                                data(new char[node_size]) {}
-    ~BufferNode() {
-        if(data != nullptr) {
-            delete[] data;
-            data = nullptr;
-        }
-    }
+    BufferNode(uint node_size);
+    ~BufferNode();
 
     /**
      * @brief 删除缓冲区节点中的数据存储区，释放内存
      * 
      */
-    void delete_node_data() {
-        if(data != nullptr) {
-            delete[] data;
-            data = nullptr;
-        }
-    }
+    void release_data_memory();
 
     /**
      * @brief 清空缓冲区节点的数据，不删除节点
      * 
      */
-    void clear_node() {
-        used_size = 0;
-        read_offset = 0;
-        write_offset = 0;
-
-        MORE_FLAG = false;
-        HEAD_FLAG = false;
-        TAIL_FLAG = false;
-    }
+    void reset_node();
 
     bool is_used() const { return used_size > 0; }
 
+    bool is_special() const { return SPECIAL_FLAG; } // 看是不是哨兵
 public:
     BufferNode* next;
     BufferNode* prev;
 
+    bool SPECIAL_FLAG; // 哨兵位
     bool MORE_FLAG; // More_Node(false/true)
     bool HEAD_FLAG; // HEAD_NODE
     bool TAIL_FLAG; // TAIL_NODE
 
     // 读写控制
     uint used_size; // 实际使用的大小
-    uint read_offset;
-    uint write_offset;
-
+    uint read_offset; // 读取偏移量(断点续读)
     char* data; // buffer
 };
 
 /**
  * @brief 链式缓冲区,仅仅存储数据,不进行其它的任何操作
+ * @details 当前的设计,在缓冲区的开始会有一个“哨兵位”的存在
  * 
  */
 class ChainedBuffer {
@@ -94,10 +73,10 @@ public:
     /**
      * @brief 尝试直接获取一个完整的报文，将数据存入ds中
      * 
-     * @param ds 
+     * @param dest 
      * @return int 读取的字节数, 读取失败返回-1
      */
-    int read(void* ds, const int len);
+    int read(void* dest, const uint dest_len);
 
     bool empty() const { return size_ == 0; }
     void clear();
@@ -108,24 +87,33 @@ private:
     /**
     * @brief 将ds插在rs之后
     * 
-    * @param ds
-    * @param rs 
+    * @param dest
+    * @param resource
+    * @return int 成功返回0, 失败返回-1
     */
-    void insert_(BufferNode* ds, BufferNode* rs);
+    int insert_(BufferNode* dest, BufferNode* resource);
 
     /**
      * @brief 删除ds结点
      * 
-     * @param ds 
+     * @param dest 
+     * @return int 成功返回0, 失败返回-1
      */
-    void remove_(BufferNode* ds);
+    int remove_(BufferNode* dest);
 
     /* node操作 */
     BufferNode* create_node_(); // 创建node
-    void del_node_(BufferNode*); // 删除node
+    int del_node_(BufferNode*); // 删除node
+
     void set_node_flag_(BufferNode* node, bool HEAD_FLAG, bool TAIL_FLAG, bool MORE_FLAG);
     bool set_node_data_(BufferNode* node, const void* data, int len);
-
+    
+    /**
+     * @brief 将一个可回收的结点移动至缓冲区的末尾
+     * 
+     * @param node 
+     */
+    bool recycle_node_(BufferNode* node);
 private:
     BufferNode* r_point_;
     BufferNode* w_point_;
@@ -135,6 +123,8 @@ private:
 
     uint size_;
     uint capacity_;
-    uint SINGLE_NODE_SIZE_OF_BYTE;
-    uint MAX_NODE_COUNT;
+    const uint SINGLE_NODE_SIZE_OF_BYTE;
+    const uint MAX_NODE_COUNT;
 };
+
+} // namespace moshi

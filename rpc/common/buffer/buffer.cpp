@@ -112,7 +112,8 @@ int ChainedBuffer::read(void* dest, const uint dest_len) {
         return -1; // 出错了
     }
     if(r_point_ == nullptr) {
-        return -1; // 出错了
+        // 如果 r_point_ 为空，尝试从头开始
+        r_point_ = head_node_;
     }
     if(r_point_->is_special()) { // 跳过哨兵
         r_point_ = r_point_->next;
@@ -122,28 +123,39 @@ int ChainedBuffer::read(void* dest, const uint dest_len) {
     }
 
     int offset = 0;
-    BufferNode* mark = r_point_;
 
     while(offset < dest_len) {
-        if(r_point_->is_used()) {
-            int len = std::min(r_point_->used_size - r_point_->read_offset, dest_len - offset);
-            std::memcpy(static_cast<char*>(dest) + offset, r_point_->data + r_point_->read_offset, len);
-            offset += len;
-            r_point_->read_offset += len; // 本次可能没读完
+        if(r_point_ == nullptr) {
+            r_point_ = head_node_; // Reset for next time
+            break;
+        }
+        
+        // 如果遇到未使用的节点（空闲节点），说明没有数据了
+        if (!r_point_->is_used()) {
+            break;
         }
 
-        // 如果读到末尾的同时,末尾结点也被读完了,则跳出循环
-        if(r_point_->TAIL_FLAG == true && r_point_->read_offset == r_point_->used_size)
-            break;
-    }
+        int len = std::min(r_point_->used_size - r_point_->read_offset, dest_len - offset);
+        std::memcpy(static_cast<char*>(dest) + offset, r_point_->data + r_point_->read_offset, len);
+        offset += len;
+        r_point_->read_offset += len; // 本次可能没读完
 
-    // 这个节点被读完了,则回收结点
-    if(r_point_->TAIL_FLAG == true && r_point_->read_offset == r_point_->used_size) {
-        while(mark != r_point_) {
-            BufferNode* temp = mark->next;
-            mark->reset_node();
-            recycle_node_(mark);
-            mark = temp;
+        // 如果读到末尾的同时,末尾结点也被读完了,则跳出循环
+        // 这里需要注意：如果读完了当前节点，需要判断是否是 TAIL
+        if(r_point_->read_offset == r_point_->used_size) {
+            BufferNode* next_node = r_point_->next;
+            bool is_tail = r_point_->TAIL_FLAG;
+
+            // 如果是 tail_node_，需要更新 tail_node_ 指针，防止 recycle 后指针失效或逻辑错误
+            if (r_point_ == tail_node_) {
+                tail_node_ = r_point_->prev;
+            }
+
+            recycle_node_(r_point_);
+            r_point_ = next_node;
+
+            if(is_tail)
+                break;
         }
     }
     
@@ -157,26 +169,36 @@ void ChainedBuffer::clear() {
 
     BufferNode* node = head_node_->next;
     while(node != nullptr) {
-        if(node->is_special())
-            continue;
+        if(node->is_special()) {
+             node = node->next;
+             continue;
+        }
         
         BufferNode* temp = node->next;
         del_node_(node);
         node = temp;
     }
+    // 重置指针
+    r_point_ = head_node_;
+    w_point_ = head_node_;
+    tail_node_ = head_node_;
+    head_node_->next = nullptr;
 }
 
 int ChainedBuffer::insert_(BufferNode* ds, BufferNode* rs) {
-    if(capacity_ >= MAX_NODE_COUNT) {
-        return -1; // 出错了
+    // 插入逻辑：将 rs 插入到 ds 之后
+    // 需要保留 ds->next (即空闲链表)
+    
+    rs->next = ds->next;
+    if(rs->next != nullptr) {
+        rs->next->prev = rs;
     }
-
     ds->next = rs;
     rs->prev = ds;
+
     if(rs->is_used()) {
         size_++;
     }
-    capacity_++;
 
     return 0;
 }
@@ -186,6 +208,10 @@ int ChainedBuffer::remove_(BufferNode* ds) {
 }
 
 BufferNode* ChainedBuffer::create_node_() {
+    // 允许创建 MAX_NODE_COUNT 个数据节点（不包括哨兵节点）
+    if (capacity_ > MAX_NODE_COUNT) {
+        return nullptr;
+    }
     BufferNode* node = new BufferNode(SINGLE_NODE_SIZE_OF_BYTE);
     capacity_++;
     return node;

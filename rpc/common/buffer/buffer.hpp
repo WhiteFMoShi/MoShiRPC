@@ -18,7 +18,7 @@ struct BufferNode {
     void release_data_memory();
 
     /**
-     * @brief 清空缓冲区节点的数据，不删除节点
+     * @brief 重置缓冲区节点的状态，将其标记为未使用状态
      * 
      */
     void reset_node();
@@ -30,7 +30,7 @@ public:
     BufferNode* next;
     BufferNode* prev;
 
-    bool SPECIAL_FLAG; // 哨兵位
+    bool SPECIAL_FLAG; // 哨兵位(标识head_node_)
     bool MORE_FLAG; // More_Node(false/true)
     bool HEAD_FLAG; // HEAD_NODE
     bool TAIL_FLAG; // TAIL_NODE
@@ -79,6 +79,12 @@ public:
     int read(void* dest, const uint dest_len);
 
     bool empty() const { return size_ == 0; }
+
+    /**
+     * @brief 清空缓冲区中的所有数据结点
+     * @details 清除数据结点,但是不会清楚head_node_(哨兵结点)
+     * 
+     */
     void clear();
 
     uint get_node_count() const { return size_; }

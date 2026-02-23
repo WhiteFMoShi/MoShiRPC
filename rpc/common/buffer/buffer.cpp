@@ -50,6 +50,7 @@ ChainedBuffer::ChainedBuffer(uint node_size, uint max_node_count) : r_point_(nul
 
 ChainedBuffer::~ChainedBuffer() {
     clear();
+    del_node_(head_node_);
 }
 
 int ChainedBuffer::write(const void* data, const int len) {
@@ -60,7 +61,8 @@ int ChainedBuffer::write(const void* data, const int len) {
     // 还有空白缓冲区
     while(w_point_->next != nullptr) {
         w_point_ = w_point_->next;
-        if(w_point_->is_used()) {
+        if(w_point_->is_used() && w_point_ != head_node_) {
+            w_point_ = mark;
             return -1; // 出错了
         }
         // 单个结点可以放得下
@@ -109,12 +111,19 @@ int ChainedBuffer::read(void* dest, const uint dest_len) {
     if(dest == nullptr || dest_len == 0) {
         return -1; // 出错了
     }
+    if(r_point_ == nullptr) {
+        return -1; // 出错了
+    }
     if(r_point_->is_special()) { // 跳过哨兵
         r_point_ = r_point_->next;
+        if(r_point_ == nullptr) {
+            return 0;
+        }
     }
 
     int offset = 0;
     BufferNode* mark = r_point_;
+
     while(offset < dest_len) {
         if(r_point_->is_used()) {
             int len = std::min(r_point_->used_size - r_point_->read_offset, dest_len - offset);
@@ -123,16 +132,18 @@ int ChainedBuffer::read(void* dest, const uint dest_len) {
             r_point_->read_offset += len; // 本次可能没读完
         }
 
+        // 如果读到末尾的同时,末尾结点也被读完了,则跳出循环
         if(r_point_->TAIL_FLAG == true && r_point_->read_offset == r_point_->used_size)
             break;
     }
 
-    // 这个节点被读完了
+    // 这个节点被读完了,则回收结点
     if(r_point_->TAIL_FLAG == true && r_point_->read_offset == r_point_->used_size) {
         while(mark != r_point_) {
-            mark = mark->next;
+            BufferNode* temp = mark->next;
             mark->reset_node();
             recycle_node_(mark);
+            mark = temp;
         }
     }
     
@@ -140,14 +151,23 @@ int ChainedBuffer::read(void* dest, const uint dest_len) {
 }
 
 void ChainedBuffer::clear() {
-    while(head_node_ != nullptr) {
-        del_node_(head_node_);
-        head_node_ = head_node_->next;
+    if(head_node_ == nullptr) {
+        return;
+    }
+
+    BufferNode* node = head_node_->next;
+    while(node != nullptr) {
+        if(node->is_special())
+            continue;
+        
+        BufferNode* temp = node->next;
+        del_node_(node);
+        node = temp;
     }
 }
 
 int ChainedBuffer::insert_(BufferNode* ds, BufferNode* rs) {
-    if(size_ >= MAX_NODE_COUNT) {
+    if(capacity_ >= MAX_NODE_COUNT) {
         return -1; // 出错了
     }
 
@@ -158,7 +178,7 @@ int ChainedBuffer::insert_(BufferNode* ds, BufferNode* rs) {
     }
     capacity_++;
 
-    return false;
+    return 0;
 }
 
 int ChainedBuffer::remove_(BufferNode* ds) {

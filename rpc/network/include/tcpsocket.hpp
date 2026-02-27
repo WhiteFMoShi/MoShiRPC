@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "chained_buffer.hpp"
+
 namespace moshi {
 /**
  * @brief 只实现了Socket的最最最最基础的封装
@@ -26,6 +28,7 @@ public:
 
     // 接收数据（返回实际接收的字节数）
     ssize_t recv(int fd, void* buf, size_t len);
+    ssize_t recv_to_buffer(int fd, ChainedBuffer& buffer, size_t len);
 
     // 关闭 Socket
     void close(int fd);

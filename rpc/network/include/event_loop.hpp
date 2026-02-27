@@ -7,7 +7,7 @@
 #include <thread>
 #include <sys/epoll.h>
 #include <atomic>
-#include <unordered_map>
+#include <map>
 
 namespace moshi {
 
@@ -96,7 +96,7 @@ private:
     int wakeup_fd_; // 非阻塞IO
     
     std::vector<epoll_event> events_; // 用于存储epoll_wait返回的就绪事件
-    std::unordered_map<int, std::shared_ptr<Channel>> channel_; // <fd, Channel>
+    std::map<int, std::shared_ptr<Channel>> channel_; // <fd, Channel>
 };
 
 } // namespace moshi

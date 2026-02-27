@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+
 namespace moshi {
 
 struct NetworkConfig {

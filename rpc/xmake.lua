@@ -5,6 +5,8 @@ set_rules("mode.release", "mode.debug")
 set_rules("plugin.compile_commands.autoupdate")
 
 set_warnings("all", "error")
+
+-- 依赖库配置
 add_requires("spdlog 1.16.*", 
             "cjson 1.7.*", 
             "protobuf-cpp 33.2",
@@ -14,9 +16,6 @@ add_requires("spdlog 1.16.*",
 -- 需要使用vpn下载，不然没啥用
 -- add_requires("homebrew::zookeeper")
 
-target("rpc_core")
-    set_kind("static") -- 生成静态库
-
-    add_deps("network",
-            "protocol",
-            "register")
+includes("network",
+        "protocol",
+        "common")

@@ -1,53 +1,59 @@
 FROM ubuntu:22.04
 
-# 设置环境变量
 ENV DEBIAN_FRONTEND=noninteractive
-ENV LANG=zh_CN.UTF-8
-ENV LC_ALL=zh_CN.UTF-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
-# 安装语言包和基础工具
-RUN apt update && apt install -y \
-    locales \
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    sudo \
+    bash \
     build-essential \
-    g++ \
-    gcc \
+    pkg-config \
+    cmake \
+    ninja-build \
     clang \
     clangd \
     lldb \
-    libclang-dev \
+    gdb \
     python3 \
-    vim \
-    git \
-    curl \
-    sudo \
-    cmake \
-    ninja-build && \
-    locale-gen zh_CN.UTF-8 && \
-    rm -rf /var/lib/apt/lists/*
+    unzip \
+    zip \
+    tar \
+    autoconf \
+    automake \
+    libtool \
+    && rm -rf /var/lib/apt/lists/*
 
-# 安装中文字体和GUI支持
-RUN apt update && apt install -y \
-    fonts-wqy-zenhei \
-    fonts-wqy-microhei \
-    libgtk-3-0 \
-    libgbm1 \
-    libnss3 \
-    libxss1 \
-    libasound2 && \
-    rm -rf /var/lib/apt/lists/*
+RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
+    && useradd --uid "${USER_UID}" --gid "${USER_GID}" -m "${USERNAME}" -s /bin/bash \
+    && echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
+    && chmod 0440 "/etc/sudoers.d/${USERNAME}"
 
-# 安装xmake
-RUN curl -fsSL https://xmake.io/shget.text -o install.sh && \
-    bash install.sh && \
-    rm install.sh && \
-    echo 'export PATH=~/.local/bin:$PATH' >> ~/.bashrc && \
-    echo 'export PATH=~/.local/bin:$PATH' >> /root/.bashrc && \
-    ln -sf ~/.local/bin/xmake /usr/local/bin/xmake
+# Install xmake (try apt first; fallback to upstream installer).
+ARG XMAKE_INSTALL_URL=https://xmake.io/shget.text
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends xmake || true; \
+    rm -rf /var/lib/apt/lists/*; \
+    if ! command -v xmake >/dev/null 2>&1; then \
+        curl -fsSL "${XMAKE_INSTALL_URL}" -o /tmp/xmake_install.sh; \
+        bash /tmp/xmake_install.sh; \
+        rm -f /tmp/xmake_install.sh; \
+        ln -sf /root/.local/bin/xmake /usr/local/bin/xmake; \
+    fi
 
-# 设置环境变量
-ENV PATH=~/.local/bin:$PATH
+RUN mkdir -p /workspaces/MoShiRPC \
+    && chown -R "${USERNAME}:${USERNAME}" /workspaces
 
-# 设置工作目录
-WORKDIR /workspace
+WORKDIR /workspaces/MoShiRPC
+
+USER ${USERNAME}
 
 CMD ["/bin/bash"]

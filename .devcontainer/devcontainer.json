@@ -1,32 +1,36 @@
 {
-    "name": "MoShiRPC_Dev",
-    "dockerFile": "./Dockerfile",
-    "context": "..",
-    "workspaceFolder": "/workspace",
-    "mounts": [
-        "source=${localWorkspaceFolder},target=/workspace,type=bind",
-        "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"
-    ],
+    "name": "MoShiRPC (Ubuntu 22.04)",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "workspaceFolder": "/workspaces/MoShiRPC",
+    "remoteUser": "vscode",
+    "updateRemoteUserUID": true,
     "runArgs": [
         "--init",
-        "--dns", "8.8.8.8"
+        "--cap-add=SYS_PTRACE",
+        "--security-opt",
+        "seccomp=unconfined"
     ],
-    "initializeCommand": "if [ -f ${localEnv:HOME}/.gitconfig ]; then cp ${localEnv:HOME}/.gitconfig /tmp/gitconfig_for_container; fi",
+    "postCreateCommand": "bash .devcontainer/postCreate.sh",
     "customizations": {
         "vscode": {
             "extensions": [
                 "llvm-vs-code-extensions.vscode-clangd",
+                "ms-vscode.cmake-tools",
+                "twxs.cmake",
+                "tboox.xmake-vscode",
                 "MS-CEINTL.vscode-language-pack-zh-hans",
-                "Codeium.codeium"
+                "openai.chatgpt"
             ],
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash",
-                "extensions.autoUpdate": false,
-                "extensions.autoCheckUpdates": false,
                 "clangd.path": "/usr/bin/clangd",
-                "clangd.arguments": ["--background-index"],
+                "clangd.arguments": [
+                    "--background-index"
+                ]
             }
         }
-    },
-    "postCreateCommand": "chmod 700 /root/.ssh && chmod 600 /root/.ssh/* && if [ -f /tmp/gitconfig_for_container ]; then cp /tmp/gitconfig_for_container /root/.gitconfig; fi && git config --global --add safe.directory /workspace"
+    }
 }

@@ -1,36 +1,58 @@
 {
-    "name": "MoShiRPC (Ubuntu 22.04)",
-    "build": {
-        "dockerfile": "Dockerfile",
-        "context": ".."
-    },
-    "workspaceFolder": "/workspaces/MoShiRPC",
-    "remoteUser": "vscode",
-    "updateRemoteUserUID": true,
-    "runArgs": [
-        "--init",
-        "--cap-add=SYS_PTRACE",
-        "--security-opt",
-        "seccomp=unconfined"
-    ],
-    "postCreateCommand": "bash .devcontainer/postCreate.sh",
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "llvm-vs-code-extensions.vscode-clangd",
-                "ms-vscode.cmake-tools",
-                "twxs.cmake",
-                "tboox.xmake-vscode",
-                "MS-CEINTL.vscode-language-pack-zh-hans",
-                "openai.chatgpt"
-            ],
-            "settings": {
-                "terminal.integrated.defaultProfile.linux": "bash",
-                "clangd.path": "/usr/bin/clangd",
-                "clangd.arguments": [
-                    "--background-index"
-                ]
-            }
-        }
+  "name": "MoShiRPC Ubuntu22.04",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/MoShiRPC",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
+  "containerEnv": {
+    "CODEX_HOME": "/home/vscode/.codex",
+    "GIT_EDITOR": "code --wait",
+    "VISUAL": "code --wait",
+    "EDITOR": "code --wait",
+    "HTTP_PROXY": "${localEnv:HTTP_PROXY}",
+    "HTTPS_PROXY": "${localEnv:HTTPS_PROXY}",
+    "ALL_PROXY": "${localEnv:ALL_PROXY}",
+    "NO_PROXY": "${localEnv:NO_PROXY}",
+    "http_proxy": "${localEnv:http_proxy}",
+    "https_proxy": "${localEnv:https_proxy}",
+    "all_proxy": "${localEnv:all_proxy}",
+    "no_proxy": "${localEnv:no_proxy}",
+    "XMAKE_PROXY": "${localEnv:ALL_PROXY}",
+    "XMAKE_REPO_URL": "https://gitee.com/tboox/xmake-repo.git"
+  },
+  "mounts": [
+    "source=${localEnv:HOME}/.codex,target=/home/vscode/.codex,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.gitconfig,target=/tmp/host-gitconfig,type=bind,readonly",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+  ],
+  "runArgs": [
+    "--init",
+    "--cap-add=SYS_PTRACE",
+    "--security-opt",
+    "seccomp=unconfined"
+  ],
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "tboox.xmake-vscode",
+        "ms-vscode.cmake-tools",
+        "openai.chatgpt",
+        "ms-ceintl.vscode-language-pack-zh-hans"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "clangd.path": "/usr/bin/clangd",
+        "clangd.arguments": [
+          "--background-index",
+          "--clang-tidy"
+        ],
+        "C_Cpp.default.compilerPath": "/usr/bin/g++"
+      }
     }
+  }
 }

@@ -1,20 +1,27 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
+ENV PATH=/home/${USERNAME}/.local/bin:/usr/local/bin:${PATH}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    locales \
     ca-certificates \
     curl \
+    wget \
     git \
+    openssh-client \
     sudo \
     bash \
     build-essential \
+    gcc \
+    g++ \
+    make \
     pkg-config \
     cmake \
     ninja-build \
@@ -26,9 +33,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     zip \
     tar \
+    xz-utils \
+    file \
     autoconf \
     automake \
     libtool \
+    dnsutils \
+    iputils-ping \
+    net-tools \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
@@ -36,18 +48,14 @@ RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
     && echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
     && chmod 0440 "/etc/sudoers.d/${USERNAME}"
 
-# Install xmake (try apt first; fallback to upstream installer).
-ARG XMAKE_INSTALL_URL=https://xmake.io/shget.text
+RUN locale-gen en_US.UTF-8 zh_CN.UTF-8
+
+# Best effort preinstall xmake from apt. Final install is handled in postCreate.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends xmake || true; \
     rm -rf /var/lib/apt/lists/*; \
-    if ! command -v xmake >/dev/null 2>&1; then \
-        curl -fsSL "${XMAKE_INSTALL_URL}" -o /tmp/xmake_install.sh; \
-        bash /tmp/xmake_install.sh; \
-        rm -f /tmp/xmake_install.sh; \
-        ln -sf /root/.local/bin/xmake /usr/local/bin/xmake; \
-    fi
+    if command -v xmake >/dev/null 2>&1; then xmake --version; fi
 
 RUN mkdir -p /workspaces/MoShiRPC \
     && chown -R "${USERNAME}:${USERNAME}" /workspaces

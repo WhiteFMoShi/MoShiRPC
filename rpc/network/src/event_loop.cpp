@@ -34,8 +34,9 @@ EventLoop::EventLoop() : default_thread_id_(std::this_thread::get_id()), flag_{f
     }
     events_.resize(2048);  // 预分配事件数组
 
-    epoll_event ev;
+    epoll_event ev{};
     ev.events = EPOLLIN;
+    ev.data.fd = wakeup_fd_;
     if(epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, wakeup_fd_, &ev)) {
         close(wakeup_fd_);
         throw std::system_error(errno, std::generic_category(), "epoll_ctl() add wakeup_fd_ failed");
@@ -58,6 +59,7 @@ bool EventLoop::add_channel(int fd, std::shared_ptr<Channel> channel) {
         return false;
     }
 
+    // 还有bug，没有处理好epoll_event中的fd，会导致触发但是拿不到fd的问题
     if(epoll_ctl(epoll_fd_,
         EPOLL_CTL_ADD, fd,
         channel->get_epoll_events()) < 0) {

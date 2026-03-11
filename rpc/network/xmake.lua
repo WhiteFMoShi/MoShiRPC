@@ -1,4 +1,4 @@
-set_rules("plugin.compile_commands.autoupdate")
+add_rules("plugin.compile_commands.autoupdate")
 add_rules("mode.debug", "mode.release", "mode.check")
 
 on_clean(

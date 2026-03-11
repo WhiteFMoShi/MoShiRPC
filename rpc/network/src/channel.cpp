@@ -9,16 +9,19 @@ void Channel::handle_event() const {
         return;
     }
     if(epoll_events_.events & EPOLLIN) {
-        epollin_cb_();
+        if(epollin_cb_ != nullptr)
+            epollin_cb_();
     }
     if(epoll_events_.events & EPOLLOUT) {
-        epollout_cb_();
+        if(epollout_cb_ != nullptr)
+            epollout_cb_();
     }
 }
 
 void Channel::handle_error() const {
     if(epoll_events_.events & EPOLLERR) { // 设置了错误回调才可执行
-        epollerr_cb_();
+        if(epollerr_cb_ != nullptr)
+            epollerr_cb_();
     }
 }
 

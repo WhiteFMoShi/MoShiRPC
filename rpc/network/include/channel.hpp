@@ -10,15 +10,16 @@ namespace moshi{
 
 class Channel {
 public:
+    using EpollinCallback  = std::function<void()>;
+    using EpolloutCallback = std::function<void()>;
+    using EpollerrCallback = std::function<void()>;
+
+public:
     void set_fd(int fd) { fd_ = fd; }
     int  get_fd() const { return fd_; }
 
     void set_epoll_events(epoll_event events) { epoll_events_ = events; }
     epoll_event* get_epoll_events() { return &epoll_events_; }
-
-    using EpollinCallback  = std::function<void()>;
-    using EpolloutCallback = std::function<void()>;
-    using EpollerrCallback = std::function<void()>;
 
     void set_epollin_callback (EpollinCallback cb);
     void set_epollout_callback(EpolloutCallback cb);

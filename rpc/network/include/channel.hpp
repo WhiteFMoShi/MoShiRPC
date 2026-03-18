@@ -10,7 +10,7 @@
 namespace moshi{
 
 /**
-* @brief 专注于进行事件的回调处理
+* @brief 专注于进行事件的解耦
 * 
 */
 class Channel {
@@ -20,7 +20,9 @@ public:
     using EpollerrCallback = std::function<void()>;
 
 public:
-    Channel() : fd_(-1), focus_events_(0) {}
+    Channel(EpollerrCallback err_cb = nullptr) :
+        epollin_cb_(nullptr), epollout_cb_(nullptr), epollerr_cb_(err_cb), 
+        fd_(-1), focus_events_(0) {}
 
     void set_fd(int fd) { fd_ = fd; }
     int  get_fd() const { return fd_; }
@@ -34,21 +36,26 @@ public:
 
     void remove_epollin_event()  { focus_events_ &= ~EPOLLIN; }
     void remove_epollout_event() { focus_events_ &= ~EPOLLOUT; }
-    void remove_epollerr_event() { focus_events_ &= ~EPOLLERR; }
+
+    /**
+     * @brief 将ERR对应的callback置空
+     * 
+     */
+    void clear_error_callback() { epollerr_cb_ = nullptr; }
+
+    /**
+     * @brief 事件处理
+     * 
+     * @param revent epoll_wait所监听到的fd上触发的事件
+     * @return int 1 表示正确处理revent
+                    -1 表示出现了ERR或是HUP/RDHUP，但是Channel不会关闭连接
+     */
+    int handle_event(uint32_t revent) const;
+
 
     EpollinCallback  get_readable_callback() const { return epollin_cb_; }
     EpolloutCallback get_writable_callback() const { return epollout_cb_; }
     EpollerrCallback get_error_callback()    const { return epollerr_cb_; }
-    
-    /**
-     * @brief 根据epoll_wait触发的事件来进行函数回调操作
-     * 
-     * @param revent epoll_wait所返回的，已被触发的事件
-     */
-    void handle_event(uint32_t revent) const;
-
-private:
-    void handle_error_() const;
 
 private:
     // 事件对应的回调函数

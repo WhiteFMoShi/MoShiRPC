@@ -16,6 +16,8 @@
 #include <thread>
 #include <unistd.h>
 
+using namespace moshi;
+
 void server_thread() {
     TcpSocket server;
     server.listen("127.0.0.1", 8080);

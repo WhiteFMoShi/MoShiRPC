@@ -19,13 +19,6 @@ target("network") -- 导出网络库
     add_files("src/*.cpp")
     add_deps("common")
 
-target("test_event_loop")
-    set_kind("binary")
-    set_default(false)
-    add_files("test/test_event_loop.cpp")
-    add_deps("network")
-    add_packages("gtest")
-
 target("test_socket")
     set_kind("binary")
     set_default(false)

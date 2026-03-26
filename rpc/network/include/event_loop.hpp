@@ -59,6 +59,7 @@ private:
 
     void wakeup_();
     void drain_wakeup_fd_();
+    bool eventloop_run_();
 
 private:
     std::atomic<bool> flag_{false};

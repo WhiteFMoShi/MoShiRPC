@@ -7,6 +7,7 @@
 
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
+#include <thread>
 #include <unistd.h>
 
 using moshi::EventLoop;
@@ -136,41 +137,16 @@ bool EventLoop::start() {
         return false;
     }
 
-    while (flag_.load()) {
-        int n = ::epoll_wait(epoll_fd_, events_.data(), static_cast<int>(events_.size()), -1);
-        if (n < 0) {
-            if (errno == EINTR) { // 系统是由于中断而导致的错误，不是真正的错误，重新尝试就可以了
-                continue;
-            }
-
-            // 不是EINTR，可能是遇到了严重错误
-            flag_.store(false);
-            return false;
-        }
-
-        // 事件处理
-        for (int i = 0; i < n; ++i) {
-            const int fd = events_[i].data.fd;
-            const uint32_t revent = events_[i].events;
-
-            if (fd == wakeup_fd_) {
-                drain_wakeup_fd_();
-                continue;
-            }
-
-            auto it = channel_.find(fd);
-            if (it == channel_.end() || !it->second) {
-                continue;
-            }
-
-            it->second->handle_event(revent);
-        }
-    }
+    if(eventloop_run_())
+        return false;
 
     return true;
 }
 
 bool EventLoop::stop() {
+    if(!flag_.load())
+        return true;
+
     flag_.store(false);
     wakeup_();
     return true;
@@ -201,4 +177,38 @@ void EventLoop::wakeup_() {
     if (n != static_cast<ssize_t>(sizeof(one))) {
         std::cout << "EventLoop::wakeup_() wrote error\n";
     }
+}
+
+bool EventLoop::eventloop_run_() {
+    while (flag_.load()) {
+        int n = ::epoll_wait(epoll_fd_, events_.data(), static_cast<int>(events_.size()), -1);
+        if (n < 0) {
+            if (errno == EINTR) { // 系统是由于中断而导致的错误，不是真正的错误，重新尝试就可以了
+                continue;
+            }
+
+            // 不是EINTR，可能是遇到了严重错误
+            flag_.store(false);
+            return false;
+        }
+
+        // 事件处理
+        for (int i = 0; i < n; ++i) {
+            const int fd = events_[i].data.fd;
+            const uint32_t revent = events_[i].events;
+
+            if (fd == wakeup_fd_) {
+                drain_wakeup_fd_();
+                continue;
+            }
+
+            auto it = channel_.find(fd);
+            if (it == channel_.end() || !it->second) {
+                continue;
+            }
+
+            it->second->handle_event(revent);
+        }
+    }
+    return true;
 }

@@ -137,10 +137,7 @@ bool EventLoop::start() {
         return false;
     }
 
-    if(eventloop_run_())
-        return false;
-
-    return true;
+    return eventloop_run_();
 }
 
 bool EventLoop::stop() {

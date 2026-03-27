@@ -1,0 +1,61 @@
+%%{init: {'theme': 'base', 'flowchart': {'curve': 'linear', 'nodeSpacing': 40, 'rankSpacing': 55}, 'themeVariables': {'fontFamily': 'Times New Roman, SimHei, STHeiti, Heiti SC, Microsoft YaHei, Noto Sans CJK SC, serif', 'fontSize': '13px', 'lineColor': '#111827'}}}%%
+graph TB
+  %% MoShiRPC（总览）- 分层 + 固定布局，尽量避免扇出导致的交叉线
+
+  classDef py fill:#E0F2FE,stroke:#0284C7,stroke-width:1px,color:#0B1220;
+  classDef bind fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#0B1220;
+  classDef eng fill:#DCFCE7,stroke:#16A34A,stroke-width:1px,color:#0B1220;
+  classDef core fill:#EDE9FE,stroke:#7C3AED,stroke-width:1px,color:#0B1220;
+  classDef opt fill:#FFE4E6,stroke:#FB7185,stroke-width:1px,color:#0B1220;
+  classDef hub fill:#F8FAFC,stroke:#94A3B8,stroke-width:1px,color:#0B1220,stroke-dasharray: 4 3;
+
+  %% Row 1: Python apps (left-right)
+  subgraph R1["Python Layer（业务层）"]
+    direction LR
+    py_client["Python Client（客户端业务）<br/>App Code（业务代码）"]:::py
+    py_server["Python Server（服务端业务）<br/>App Code（业务代码）"]:::py
+  end
+
+  %% Row 2: binding layer
+  pybind["rpc/pybind<br/>Binding（C++ <-> Python）"]:::bind
+
+  %% Row 3: engines (left-right)
+  subgraph R3["C++ Engine（引擎层）"]
+    direction LR
+    c_eng["rpc/client<br/>Client Engine（客户端引擎）"]:::eng
+    s_eng["rpc/server<br/>Server Engine（服务端引擎）"]:::eng
+    eng_hub["Engine Hub（汇聚）"]:::hub
+    c_eng --> eng_hub
+    s_eng --> eng_hub
+  end
+
+  %% Row 4: shared core
+  core["Common（复用组件）<br/>network / protocol / codec / common"]:::core
+
+  %% Row 5: optional governance/config (use small hubs to reduce clutter)
+  subgraph R5["Optional（可选）：治理 / 配置"]
+    direction LR
+    discovery(("Discovery（发现）")):::hub
+    config_hub(("Config（配置）")):::hub
+    reg["rpc/register<br/>Registry（注册/发现）"]:::opt
+    cfg["rpc/config<br/>Config（参数配置）"]:::opt
+    discovery --> reg
+    config_hub --> cfg
+  end
+
+  %% Main boundaries (no diagonal fan-out)
+  py_client --> pybind
+  py_server --> pybind
+  pybind --> c_eng
+  pybind --> s_eng
+
+  eng_hub --> core
+
+  %% Optional edges (solid lines; optional-ness is already shown by the R5 subgraph)
+  eng_hub --> discovery
+  eng_hub --> config_hub
+
+  %% Style blocks to match core_engine.mmd
+  style R1 fill:#EFF6FF,stroke:#0284C7,stroke-width:2px
+  style R3 fill:#F0FDF4,stroke:#16A34A,stroke-width:2px
+  style R5 fill:#FFF1F2,stroke:#FB7185,stroke-width:2px

@@ -1,0 +1,29 @@
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Times New Roman, SimHei, STHeiti, Heiti SC, Microsoft YaHei, Noto Sans CJK SC, serif', 'fontSize': '13px', 'lineColor': '#111827', 'actorBkg': '#F8FAFC', 'actorBorder': '#CBD5E1', 'actorTextColor': '#0B1220', 'signalColor': '#111827', 'signalTextColor': '#111827'}}}%%
+sequenceDiagram
+  %% RPC 一次调用的时序（更短的参与者命名，减少宽度）
+  autonumber
+  participant PyC as Python Client（客户端）
+  participant Bind as pybind（绑定层）
+  participant Cli as C++ RpcClient（客户端引擎）
+  participant Srv as C++ RpcServer（服务端引擎）
+  participant PyS as Python Service（业务处理）
+
+  %% Phase 1: build + send
+  rect rgb(224, 242, 254)
+    PyC->>Bind: call() 调用
+    Bind->>Cli: invoke() 转发
+    Cli->>Cli: requestId + timeout（上下文）
+    Cli->>Srv: request（请求）
+  end
+
+  %% Phase 2: dispatch + reply
+  rect rgb(254, 243, 199)
+    Srv->>Bind: dispatch() 分发
+    Bind->>PyS: handler() 处理
+    PyS-->>Bind: result（结果）
+    Bind-->>Srv: result（结果）
+    Srv-->>Cli: response（响应）
+  end
+
+  Cli-->>Bind: return（返回）
+  Bind-->>PyC: return（返回）

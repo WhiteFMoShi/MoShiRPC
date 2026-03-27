@@ -1,0 +1,86 @@
+%%{init: {'theme': 'base', 'flowchart': {'curve': 'linear', 'nodeSpacing': 18, 'rankSpacing': 18}, 'themeVariables': {'fontFamily': 'Times New Roman, SimHei, STHeiti, Heiti SC, Microsoft YaHei, Noto Sans CJK SC, serif', 'fontSize': '13px', 'lineColor': '#111827'}}}%%
+flowchart TB
+  %% RPC Core（C++ 引擎核心）- 架构图（更紧凑、更少箭头、更少空白）
+  %% 目标：标题不遮挡；减少斜线；整体更接近 16:9
+
+  classDef api fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#0B1220;
+  classDef core fill:#EDE9FE,stroke:#7C3AED,stroke-width:1px,color:#0B1220;
+  classDef stack fill:#E0F2FE,stroke:#0284C7,stroke-width:1px,color:#0B1220;
+  classDef title fill:transparent,stroke:transparent,color:#334155;
+  classDef port fill:#FFFFFF,stroke:#CBD5E1,stroke-width:1px,color:#475569;
+
+  subgraph API_BOX[" "]
+    direction LR
+    api_title["API/Binding（对外入口）"]:::title
+    subgraph API_CNT[" "]
+      direction TB
+      subgraph API_ROW[" "]
+        direction LR
+        client["rpc/client<br/>Client Stub（客户端桩）"]:::api
+        pybind["rpc/pybind<br/>Py Binding（Python绑定）"]:::api
+        server["rpc/server<br/>Server API（服务端接口）"]:::api
+      end
+      api_out([API（入口）]):::port
+    end
+  end
+
+  subgraph CORE_BOX[" "]
+    direction LR
+    core_title["Core Runtime（核心运行时）"]:::title
+    subgraph CORE_CNT[" "]
+      direction TB
+      core_in([IN（入口）]):::port
+      subgraph CORE_ROW[" "]
+        direction LR
+        subgraph CORE_L[" "]
+          direction TB
+          invoker["Invoker（调用器）<br/>sync/async"]:::core
+          mux["ReqMux（请求复用）<br/>id + future"]:::core
+          invoker --> mux
+        end
+        subgraph CORE_R[" "]
+          direction TB
+          dispatcher["Dispatcher（分发器）<br/>route/handler"]:::core
+        end
+      end
+    end
+  end
+
+  subgraph TRANS_BOX[" "]
+    direction LR
+    trans_title["Transport（传输栈）"]:::title
+    subgraph TRANS_CNT[" "]
+      direction TB
+      subgraph TRANS_ROW[" "]
+        direction LR
+        trans_in([TX/RX（收发）]):::port
+        codec["rpc/codec<br/>Codec（编解码）"]:::stack
+        protocol["rpc/protocol<br/>Protocol（协议/帧）"]:::stack
+        network["rpc/network<br/>Network（网络IO）"]:::stack
+        trans_in --> codec --> protocol --> network
+      end
+    end
+  end
+
+  client --> api_out
+  pybind --> api_out
+  server --> api_out
+
+  api_out --> core_in
+  core_in --> invoker
+  core_in --> dispatcher
+
+  mux --> trans_in
+  dispatcher --> trans_in
+
+  style API_BOX fill:#FFFBEB,stroke:#F59E0B,stroke-width:2px
+  style CORE_BOX fill:#FFFFFF,stroke:#7C3AED,stroke-width:2px
+  style TRANS_BOX fill:#EFF6FF,stroke:#0284C7,stroke-width:2px
+  style API_CNT fill:transparent,stroke:transparent
+  style CORE_CNT fill:transparent,stroke:transparent
+  style TRANS_CNT fill:transparent,stroke:transparent
+  style API_ROW fill:transparent,stroke:transparent
+  style CORE_ROW fill:transparent,stroke:transparent
+  style CORE_L fill:transparent,stroke:transparent
+  style CORE_R fill:transparent,stroke:transparent
+  style TRANS_ROW fill:transparent,stroke:transparent

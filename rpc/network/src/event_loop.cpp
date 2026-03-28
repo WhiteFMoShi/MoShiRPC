@@ -1,28 +1,26 @@
-#include "event_loop.hpp"
-
 #include <cerrno>
 #include <cstring>
 #include <iostream>
-#include <system_error>
-
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <thread>
 #include <unistd.h>
+
+#include "event_loop.hpp"
 
 using moshi::EventLoop;
 
 EventLoop::EventLoop() : default_thread_id_(std::this_thread::get_id()) {
     epoll_fd_ = ::epoll_create1(0);
     if (epoll_fd_ < 0) {
-        throw std::system_error(errno, std::generic_category(), "epoll_create1() failed");
+        return;
     }
 
     // 唤醒fd：用于从其它线程 stop() 时打断 epoll_wait
     wakeup_fd_ = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (wakeup_fd_ < 0) {
         ::close(epoll_fd_);
-        throw std::system_error(errno, std::generic_category(), "eventfd() failed");
+        return;
     }
 
     events_.resize(2048);
@@ -33,7 +31,6 @@ EventLoop::EventLoop() : default_thread_id_(std::this_thread::get_id()) {
     if (::epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, wakeup_fd_, &ev) < 0) {
         ::close(wakeup_fd_);
         ::close(epoll_fd_);
-        throw std::system_error(errno, std::generic_category(), "epoll_ctl() add wakeup_fd_ failed");
     }
 }
 

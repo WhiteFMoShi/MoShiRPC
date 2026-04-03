@@ -1,10 +1,15 @@
 #pragma once
 
-#include "base_proto.hpp"
+#include <cjson.h>
+
+#include "proto_interface.hpp"
+
+using moshi::ProtocInterface;
 
 namespace moshi {
 
-class JsonProtocol : public moshi::BaseProtocol {
+class JsonProtocol : public ProtocInterface {
+public:
 
 };
 

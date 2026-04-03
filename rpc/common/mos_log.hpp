@@ -2,13 +2,13 @@
 
 #include <string>
 
-#include "base_log.hpp"
+#include "log_interface.hpp"
 #include "log/include/log.hpp"
 
 namespace moshi {
 
 // Adapter: BaseLog(Target) -> moshi::Log(Adaptee)
-class MosLog final : public BaseLog {
+class MosLog final : public LogInterface {
 public:
     explicit MosLog(Log& log = Log::get_instance()) : log_obj_(&log) {}
 

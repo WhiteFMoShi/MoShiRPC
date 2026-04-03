@@ -23,6 +23,7 @@ public:
 
     // 单例获取
     static LogConfig& get_config_instance();
+
 private:
     /*
         Log.Config的信息，用于找到配置文件
@@ -37,7 +38,7 @@ private:
         {"asynchronous", false},
         {"thread_number", 4},
         {"log_dir_relative_path", std::string("/Logfile")}, // 强制使用string进行存储
-        {"terminal_print", true}
+        {"terminal_print", true},
     };
 
     // 键顺序（确保文件中默认的、具有相关性的配置信息是相邻的）
@@ -45,7 +46,7 @@ private:
         "asynchronous",
         "thread_number",
         "log_dir_relative_path",
-        "terminal_print"
+        "terminal_print",
     };
 
 private:
@@ -53,14 +54,13 @@ private:
     LogConfig(LogConfig&&) = delete;
 
     LogConfig operator=(LogConfig&&) = delete;
-    
+
     // 获取log.config中的配置信息
     bool set_config_();
     // 去除字符串前后的空格
-    const std::string trim_(std::string& str); 
+    const std::string trim_(std::string& str);
     // 将字符串统一转换成小写
     void to_lower_(std::string& str);
-    
+
     std::any key_to_value_(const std::string&) const;
 };
-

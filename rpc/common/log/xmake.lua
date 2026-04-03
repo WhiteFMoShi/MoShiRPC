@@ -21,7 +21,7 @@ on_clean(
 
 set_languages("c++17") -- 使用的std::any是C++17提出的
 
-target("moshi_log")
+target("log")
     set_kind("static")
     add_packages("cjson")
     add_files("src/*.cpp")

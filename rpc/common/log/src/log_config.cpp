@@ -20,10 +20,6 @@ bool LogConfig::using_threadpool() const {
     return std::any_cast<bool>(key_to_value_("asynchronous"));
 }
 
-int LogConfig::thread_number() const {
-    return std::any_cast<int>(key_to_value_("thread_number"));
-}
-
 bool LogConfig::terminal_print() const {
     return std::any_cast<bool>(key_to_value_("terminal_print"));
 }

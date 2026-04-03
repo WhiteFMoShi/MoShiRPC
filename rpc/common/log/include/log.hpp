@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef MOSHI_LOG_H
-#define MOSHI_LOG_H
+#ifndef MOSHI_LOG_HPP
+#define MOSHI_LOG_HPP
 
 #include <ctime>
 #include <string>
@@ -70,4 +70,4 @@ private:
 } // namespace moshi
 
 
-# endif
+#endif // MOSHI_LOG_HPP

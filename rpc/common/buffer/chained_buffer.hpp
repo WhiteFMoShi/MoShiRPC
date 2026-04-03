@@ -46,7 +46,7 @@ public:
  * @details 当前的设计,在缓冲区的开始会有一个“哨兵位”的存在
  * 
  */
-class ChainedBuffer{
+class ChainedBuffer {
 public:
     /**
     * @brief Construct a new Chained Buffer object
@@ -78,7 +78,7 @@ public:
      */
     int read(void* dest, const uint dest_len);
 
-    bool empty() const { return size_ == 0; }
+    bool empty() const  { return size_ == 0; }
 
     /**
      * @brief 清空缓冲区中的所有数据结点
@@ -86,6 +86,14 @@ public:
      * 
      */
     void clear();
+
+    /**
+     * @brief 该函数比较特别，返回的是链表中已使用的节点的个数，而不是其中的数据大小
+     * 
+     * @details 该函数的原意应该是要获得可读的数据字节长度，但是由于设计问题，实现极为困难
+     * @return int 可读的节点个数
+     */
+    int size() const { return size_; }
 
     uint get_node_count() const { return size_; }
 
@@ -127,7 +135,7 @@ private:
     BufferNode* head_node_;
     BufferNode* tail_node_;
 
-    uint size_;
+    uint size_; // 节点个数
     uint capacity_;
     const uint SINGLE_NODE_SIZE_OF_BYTE;
     const uint MAX_NODE_COUNT;

@@ -10,14 +10,14 @@ on_clean(
     end
 )
 
-includes("../common")
+-- includes("../common")
 
 target("network") -- 导出网络库
     set_kind("static")
     add_includedirs("include", { public = true })
     add_includedirs("../common", { public = true })
     add_files("src/*.cpp")
-    add_deps("common")
+    -- add_deps("common")
 
 target("test_socket")
     set_kind("binary")

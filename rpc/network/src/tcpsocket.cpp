@@ -43,7 +43,7 @@ int TcpSocket::accept(std::string& client_ip, uint16_t& client_port) {
 
     int client_fd = ::accept(fd_, (sockaddr*)&client_addr, &addr_len);
     if (client_fd < 0) {
-        throw std::system_error(errno, std::generic_category(), "accept() failure");
+        return -1;
     }
 
     client_ip = inet_ntoa(client_addr.sin_addr);
@@ -51,15 +51,13 @@ int TcpSocket::accept(std::string& client_ip, uint16_t& client_port) {
     return client_fd;
 }
 
-void TcpSocket::connect(const std::string& ip, uint16_t port) {
+int TcpSocket::connect(const std::string& ip, uint16_t port) {
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
 
-    if (::connect(fd_, (sockaddr*)&addr, sizeof(addr)) < 0) {
-        throw std::system_error(errno, std::generic_category(), "connect() failure");
-    }
+    return ::connect(fd_, (sockaddr*)&addr, sizeof(addr));
 }
 
 ssize_t TcpSocket::send(int fd, const void* data, size_t len) {

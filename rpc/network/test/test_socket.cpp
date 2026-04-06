@@ -43,12 +43,13 @@ int main() {
     t.detach();
 
     TcpSocket client;
-    client.connect("127.0.0.1", 8080);
-    // client.send(client.get_sockfd(), "Hello RPC\0", 9);
+    if (client.connect("127.0.0.1", 8080) < 0)
+        return 0;
+
     std::cout << "信息已发送\n";
     std::string msg = "Hello moshiRPC";
     client.send(client.get_sockfd(), msg.c_str(), msg.size());
-    sleep(2);
+    sleep(1 / 10);
 
     return 0;
 }

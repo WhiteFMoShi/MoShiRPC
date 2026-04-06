@@ -2,11 +2,9 @@
 
 #include <string>
 
-#include "chained_buffer.hpp"
-
 namespace moshi {
 /**
- * @brief 只实现了Socket的最最最最基础的封装
+ * @brief 提供socket的易用、基础封装
  */
 class TcpSocket {
 public:
@@ -21,14 +19,13 @@ public:
     int accept(std::string& client_ip, uint16_t& client_port);
 
     // 连接远程服务器
-    void connect(const std::string& ip, uint16_t port);
+    int connect(const std::string& ip, uint16_t port);
 
     // 发送数据（返回实际发送的字节数）
     ssize_t send(int fd, const void* data, size_t len);
 
     // 接收数据（返回实际接收的字节数）
     ssize_t recv(int fd, void* buf, size_t len);
-    ssize_t recv_to_buffer(int fd, ChainedBuffer& buffer, size_t len);
 
     // 关闭 Socket
     void close(int fd);

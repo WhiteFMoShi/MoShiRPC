@@ -9,11 +9,8 @@
 
 using moshi::TcpSocket;
 
-TcpSocket::TcpSocket() {
-    fd_ = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd_ < 0) {
-        throw std::system_error(errno, std::generic_category(), "socket() failure");
-    }
+TcpSocket::TcpSocket(unsigned int loop) : loop_(loop) {
+    retry();
 }
 
 TcpSocket::~TcpSocket() {
@@ -22,22 +19,23 @@ TcpSocket::~TcpSocket() {
     }
 }
 
-void TcpSocket::listen(const std::string& ip, uint16_t port, int backlog) {
+int TcpSocket::listen(const std::string& ip, uint16_t port, int backlog) noexcept {
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
 
     if (bind(fd_, (sockaddr*)&addr, sizeof(addr)) < 0) {
-        throw std::system_error(errno, std::generic_category(), "bind() failure");
+        return -1;
     }
 
     if (::listen(fd_, backlog) < 0) {
-        throw std::system_error(errno, std::generic_category(), "listen() failure");
+        return -1;
     }
+    return 0;
 }
 
-int TcpSocket::accept(std::string& client_ip, uint16_t& client_port) {
+int TcpSocket::accept(std::string& client_ip, uint16_t& client_port) noexcept {
     sockaddr_in client_addr{};
     socklen_t addr_len = sizeof(client_addr);
 
@@ -51,7 +49,7 @@ int TcpSocket::accept(std::string& client_ip, uint16_t& client_port) {
     return client_fd;
 }
 
-int TcpSocket::connect(const std::string& ip, uint16_t port) {
+int TcpSocket::connect(const std::string& ip, uint16_t port) noexcept {
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
@@ -60,14 +58,26 @@ int TcpSocket::connect(const std::string& ip, uint16_t port) {
     return ::connect(fd_, (sockaddr*)&addr, sizeof(addr));
 }
 
-ssize_t TcpSocket::send(int fd, const void* data, size_t len) {
+ssize_t TcpSocket::send(int fd, const void* data, size_t len) noexcept {
     return ::send(fd, data, len, 0);
 }
 
-ssize_t TcpSocket::recv(int fd, void* buf, size_t len) {
+ssize_t TcpSocket::recv(int fd, void* buf, size_t len) noexcept {
     return ::recv(fd, buf, len, 0);
 }
 
-void TcpSocket::close(int fd) {
+void TcpSocket::close(int fd) noexcept {
     ::close(fd);
+}
+
+void TcpSocket::retry() noexcept {
+    unsigned int temp = 0;
+    while (fd_ < 0 && temp < loop_) {
+        fd_ = socket(AF_INET, SOCK_STREAM, 0);
+        temp++;
+    }
+}
+
+bool TcpSocket::aliviable() const noexcept {
+    return get_sockfd() >= 0;
 }

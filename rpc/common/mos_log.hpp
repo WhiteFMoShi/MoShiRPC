@@ -8,7 +8,7 @@
 namespace moshi {
 
 // Adapter: BaseLog(Target) -> moshi::Log(Adaptee)
-class MosLog final : public LogInterface {
+class MosLog : public LogInterface {
 public:
     explicit MosLog(Log& log = Log::get_instance()) : log_obj_(&log) {}
 

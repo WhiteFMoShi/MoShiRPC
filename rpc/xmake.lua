@@ -1,10 +1,18 @@
 ---------- module global ----------
-set_languages("c++17")
 set_version("1.0.0")
-set_rules("mode.release", "mode.debug")
-set_rules("plugin.compile_commands.autoupdate")
 
-set_warnings("all", "error")
+add_rules("plugin.compile_commands.autoupdate")
+add_rules("mode.debug", "mode.release", "mode.check")
+add_languages("c++17") -- gtest不能在低于c++17使用
+
+on_clean(
+    function()
+        os.rm("build")
+        os.rm(".xmake")
+        os.rm(".cache")
+        os.rm("compile_commands.json")
+    end
+)
 
 -- 依赖库配置
 add_requires("spdlog 1.16.*", 
@@ -12,10 +20,6 @@ add_requires("spdlog 1.16.*",
             "protobuf-cpp 33.2",
             "gtest 1.17.*")
 
--- 在homebrew中找package(第三方仓库中的包)
--- 需要使用vpn下载，不然没啥用
--- add_requires("homebrew::zookeeper")
-
-includes("network",
-        "protocol",
-        "common")
+includes("network")
+includes("protocol")
+includes("common")

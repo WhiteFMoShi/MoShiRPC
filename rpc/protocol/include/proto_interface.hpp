@@ -13,10 +13,9 @@ namespace moshi {
 
         virtual const std::string& serialize(const ProtocInterface&) = 0;
         virtual const std::string& serialize(ProtocInterface&&) = 0;
-        virtual void deserialize(const std::string&) = 0;
-        virtual void deserialize(std::string&&) = 0;
 
-        
+        virtual void deserialize(const std::string&, ProtocInterface&) = 0;
+        virtual void deserialize(std::string&&, ProtocInterface&) = 0;
     };
 
 }

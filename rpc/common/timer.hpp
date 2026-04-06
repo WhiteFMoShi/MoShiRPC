@@ -29,19 +29,7 @@ public:
      * @return false 
      */
     template<class T>
-    bool add_task(T timeout, std::function<void()> callback) {
-        static_assert(
-            std::is_same_v<T, std::chrono::nanoseconds> ||
-            std::is_same_v<T, std::chrono::microseconds> ||
-            std::is_same_v<T, std::chrono::milliseconds> ||
-            std::is_same_v<T, std::chrono::seconds> ||
-            std::is_same_v<T, std::chrono::minutes> ||
-            std::is_same_v<T, std::chrono::hours>,
-            "Template parameter T must be a std::chrono duration type"
-        );
-
-        
-    }
+    bool add_task(T timeout, std::function<void()> callback);
 
     void start();
     void stop();

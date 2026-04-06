@@ -23,10 +23,6 @@ public:
     virtual LogInterface& get_instance() = 0;
 private:
     std::unique_ptr<LogInterface> log_;
-};
-
-// 还没有想好宏怎么写会比较好
-#define Debug(moudle, msg) \
-    
+};    
 
 } // namespace moshi

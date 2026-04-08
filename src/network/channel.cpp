@@ -1,7 +1,8 @@
-#include "channel.hpp"
 #include <unistd.h>
 #include <utility>
 #include <sys/epoll.h>
+
+#include "network/channel.hpp"
 
 using moshi::Channel;
 

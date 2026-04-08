@@ -6,7 +6,7 @@
 #include <thread>
 #include <unistd.h>
 
-#include "event_loop.hpp"
+#include "network/event_loop.hpp"
 
 using moshi::EventLoop;
 

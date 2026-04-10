@@ -24,24 +24,24 @@ public:
         epollin_cb_(nullptr), epollout_cb_(nullptr), epollerr_cb_(err_cb), 
         fd_(-1), focus_events_(0) {}
 
-    void set_fd(int fd) { fd_ = fd; }
-    int  get_fd() const { return fd_; }
+    void SetFd(int fd) { fd_ = fd; }
+    int  GetFd() const { return fd_; }
 
-    void set_focus_events(uint32_t fc_events) { focus_events_ = fc_events; }
-    uint32_t get_focus_events() const { return focus_events_; }
+    void SetFocusEvents(uint32_t fc_events) { focus_events_ = fc_events; }
+    uint32_t GetFocusEvents() const { return focus_events_; }
 
-    void set_epollin_callback (EpollinCallback cb);
-    void set_epollout_callback(EpolloutCallback cb);
-    void set_epollerr_callback(EpollerrCallback cb);
+    void SetEpollinCallback (EpollinCallback cb);
+    void SetEpolloutCallback(EpolloutCallback cb);
+    void SetEpollerrCallback(EpollerrCallback cb);
 
-    void remove_epollin_event()  { focus_events_ &= ~EPOLLIN; }
-    void remove_epollout_event() { focus_events_ &= ~EPOLLOUT; }
+    void RemoveEpollinEvent()  { focus_events_ &= ~EPOLLIN; }
+    void RemoveEpolloutEvent() { focus_events_ &= ~EPOLLOUT; }
 
     /**
      * @brief 将ERR对应的callback置空
      * 
      */
-    void clear_error_callback() { epollerr_cb_ = nullptr; }
+    void ClearErrorCallback() { epollerr_cb_ = nullptr; }
 
     /**
      * @brief 事件处理
@@ -50,12 +50,12 @@ public:
      * @return int 1 表示正确处理revent
                     -1 表示出现了ERR或是HUP/RDHUP，但是Channel不会关闭连接
      */
-    int handle_event(uint32_t revent) const;
+    int HandleEvent(uint32_t revent) const;
 
 
-    EpollinCallback  get_readable_callback() const { return epollin_cb_; }
-    EpolloutCallback get_writable_callback() const { return epollout_cb_; }
-    EpollerrCallback get_error_callback()    const { return epollerr_cb_; }
+    EpollinCallback  GetReadableCallback() const { return epollin_cb_; }
+    EpolloutCallback GetWritableCallback() const { return epollout_cb_; }
+    EpollerrCallback GetErrorCallback()    const { return epollerr_cb_; }
 
 private:
     // 事件对应的回调函数

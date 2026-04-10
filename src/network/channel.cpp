@@ -6,7 +6,7 @@
 
 using moshi::Channel;
 
-int Channel::handle_event(uint32_t revent) const {
+int Channel::HandleEvent(uint32_t revent) const {
     if(revent & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) { // 错误拥有最高的优先级
         if(epollerr_cb_ != nullptr)
             epollerr_cb_();
@@ -23,16 +23,16 @@ int Channel::handle_event(uint32_t revent) const {
     return 1;
 }
 
-void Channel::set_epollout_callback(EpolloutCallback cb) {
+void Channel::SetEpolloutCallback(EpolloutCallback cb) {
     epollout_cb_ = std::move(cb);
     focus_events_ |= EPOLLOUT;
 }
 
-void Channel::set_epollin_callback(EpollinCallback cb) {
+void Channel::SetEpollinCallback(EpollinCallback cb) {
     epollin_cb_ = std::move(cb);
     focus_events_ |= EPOLLIN;
 }
 
-void Channel::set_epollerr_callback(EpollerrCallback cb) {
+void Channel::SetEpollerrCallback(EpollerrCallback cb) {
     epollerr_cb_ = std::move(cb);
 }

@@ -9,33 +9,34 @@
  * 
  */
 
-#include "tcpsocket.hpp"
 #include <iostream>
 #include <ostream>
 #include <string>
 #include <thread>
 #include <unistd.h>
 
+#include "network/tcpsocket.hpp"
+
 using namespace moshi;
 
 void server_thread() {
     TcpSocket server;
-    server.listen("127.0.0.1", 8080);
+    server.Listen("127.0.0.1", 8080);
 
     std::cout << "监听中\n";
 
     std::string client_ip;
     uint16_t client_port;
-    int client_fd = server.accept(client_ip, client_port);
+    int client_fd = server.Accept(client_ip, client_port);
 
     char buf[1024];
     ssize_t len;
-    while((len = server.recv(client_fd, buf, sizeof(buf))) > 0) {
+    while((len = server.Recv(client_fd, buf, sizeof(buf))) > 0) {
     std::cout << "Server received: " << std::string(buf, len);
     }
     std::endl(std::cout);
 
-    server.close(client_fd);
+    server.Close(client_fd);
 }
 
 int main() {
@@ -43,12 +44,12 @@ int main() {
     t.detach();
 
     TcpSocket client;
-    if (client.connect("127.0.0.1", 8080) < 0)
+    if (client.Connect("127.0.0.1", 8080) < 0)
         return 0;
 
     std::cout << "信息已发送\n";
     std::string msg = "Hello moshiRPC";
-    client.send(client.get_sockfd(), msg.c_str(), msg.size());
+    client.Send(client.GetSockfd(), msg.c_str(), msg.size());
     sleep(1 / 10);
 
     return 0;

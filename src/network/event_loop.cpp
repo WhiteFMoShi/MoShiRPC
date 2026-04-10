@@ -35,7 +35,7 @@ EventLoop::EventLoop() : default_thread_id_(std::this_thread::get_id()) {
 }
 
 EventLoop::~EventLoop() {
-    stop();
+    Stop();
 
     if (wakeup_fd_ >= 0) {
         ::close(wakeup_fd_);
@@ -47,8 +47,8 @@ EventLoop::~EventLoop() {
     }
 }
 
-bool EventLoop::add_fd(int fd, std::shared_ptr<moshi::Channel> channel) {
-    if (!verify_thread_id_()) {
+bool EventLoop::AddFd(int fd, std::shared_ptr<moshi::Channel> channel) {
+    if (!VerifyThreadId_()) {
         std::cout << "The EventLoop can only be added by its creator thread\n";
         return false;
     }
@@ -56,9 +56,9 @@ bool EventLoop::add_fd(int fd, std::shared_ptr<moshi::Channel> channel) {
         return false;
     }
 
-    channel->set_fd(fd);
+    channel->SetFd(fd);
 
-    uint32_t listen_events = channel->get_focus_events();
+    uint32_t listen_events = channel->GetFocusEvents();
     if (listen_events == 0) {
         std::cout << "add_fd failed: channel focus events is 0\n";
         return false;
@@ -78,8 +78,8 @@ bool EventLoop::add_fd(int fd, std::shared_ptr<moshi::Channel> channel) {
     return true;
 }
 
-bool EventLoop::reset_channel(int fd, std::shared_ptr<moshi::Channel> channel) {
-    if (!verify_thread_id_()) {
+bool EventLoop::ResetChannel(int fd, std::shared_ptr<moshi::Channel> channel) {
+    if (!VerifyThreadId_()) {
         std::cout << "The EventLoop can only be reset by its creator thread\n";
         return false;
     }
@@ -87,9 +87,9 @@ bool EventLoop::reset_channel(int fd, std::shared_ptr<moshi::Channel> channel) {
         return false;
     }
 
-    channel->set_fd(fd);
+    channel->SetFd(fd);
 
-    uint32_t listen_events = channel->get_focus_events();
+    uint32_t listen_events = channel->GetFocusEvents();
     if (listen_events == 0) {
         std::cout << "reset_channel failed: channel focus events is 0\n";
         return false;
@@ -109,8 +109,8 @@ bool EventLoop::reset_channel(int fd, std::shared_ptr<moshi::Channel> channel) {
     return true;
 }
 
-bool EventLoop::remove_fd(int fd) {
-    if (!verify_thread_id_()) {
+bool EventLoop::RemoveFd(int fd) {
+    if (!VerifyThreadId_()) {
         std::cout << "The EventLoop can only be removed by its creator thread\n";
         return false;
     }
@@ -122,32 +122,32 @@ bool EventLoop::remove_fd(int fd) {
     return true;
 }
 
-bool EventLoop::start() {
-    if (!verify_thread_id_()) {
+bool EventLoop::Start() {
+    if (!VerifyThreadId_()) {
         std::cout << "The EventLoop can only be started by its creator thread\n";
         return false;
     }
 
     bool expected = false;
-    if (!flag_.compare_exchange_strong(expected, true)) {
+    if (!running_.compare_exchange_strong(expected, true)) {
         // 已经在运行
         return false;
     }
 
-    return eventloop_run_();
+    return EventloopRun_();
 }
 
-bool EventLoop::stop() {
-    if(!flag_.load())
+bool EventLoop::Stop() {
+    if(!running_.load())
         return true;
 
-    flag_.store(false);
-    wakeup_();
+    running_.store(false);
+    Wakeup_();
     return true;
 }
 
 // 清理wakeup_中的内容，避免重复触发wakeup_
-void EventLoop::drain_wakeup_fd_() {
+void EventLoop::DrainWakeupFd_() {
     uint64_t value = 0;
     while (true) {
         const ssize_t n = ::read(wakeup_fd_, &value, sizeof(value));
@@ -165,7 +165,7 @@ void EventLoop::drain_wakeup_fd_() {
     }
 }
 
-void EventLoop::wakeup_() {
+void EventLoop::Wakeup_() {
     const uint64_t one = 1;
     const ssize_t n = ::write(wakeup_fd_, &one, sizeof(one));
     if (n != static_cast<ssize_t>(sizeof(one))) {
@@ -173,8 +173,8 @@ void EventLoop::wakeup_() {
     }
 }
 
-bool EventLoop::eventloop_run_() {
-    while (flag_.load()) {
+bool EventLoop::EventloopRun_() {
+    while (running_.load()) {
         int n = ::epoll_wait(epoll_fd_, events_.data(), static_cast<int>(events_.size()), -1);
         if (n < 0) {
             if (errno == EINTR) { // 系统是由于中断而导致的错误，不是真正的错误，重新尝试就可以了
@@ -182,7 +182,7 @@ bool EventLoop::eventloop_run_() {
             }
 
             // 不是EINTR，可能是遇到了严重错误
-            flag_.store(false);
+            running_.store(false);
             return false;
         }
 
@@ -192,7 +192,7 @@ bool EventLoop::eventloop_run_() {
             const uint32_t revent = events_[i].events;
 
             if (fd == wakeup_fd_) {
-                drain_wakeup_fd_();
+                DrainWakeupFd_();
                 continue;
             }
 
@@ -201,7 +201,7 @@ bool EventLoop::eventloop_run_() {
                 continue;
             }
 
-            it->second->handle_event(revent);
+            it->second->HandleEvent(revent);
         }
     }
     return true;

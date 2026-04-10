@@ -10,7 +10,7 @@
 using moshi::TcpSocket;
 
 TcpSocket::TcpSocket(unsigned int loop) : loop_(loop) {
-    retry();
+    Retry();
 }
 
 TcpSocket::~TcpSocket() {
@@ -19,7 +19,7 @@ TcpSocket::~TcpSocket() {
     }
 }
 
-int TcpSocket::listen(const std::string& ip, uint16_t port, int backlog) noexcept {
+int TcpSocket::Listen(const std::string& ip, uint16_t port, int backlog) noexcept {
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
@@ -35,7 +35,7 @@ int TcpSocket::listen(const std::string& ip, uint16_t port, int backlog) noexcep
     return 0;
 }
 
-int TcpSocket::accept(std::string& client_ip, uint16_t& client_port) noexcept {
+int TcpSocket::Accept(std::string& client_ip, uint16_t& client_port) noexcept {
     sockaddr_in client_addr{};
     socklen_t addr_len = sizeof(client_addr);
 
@@ -49,7 +49,7 @@ int TcpSocket::accept(std::string& client_ip, uint16_t& client_port) noexcept {
     return client_fd;
 }
 
-int TcpSocket::connect(const std::string& ip, uint16_t port) noexcept {
+int TcpSocket::Connect(const std::string& ip, uint16_t port) noexcept {
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
@@ -58,19 +58,19 @@ int TcpSocket::connect(const std::string& ip, uint16_t port) noexcept {
     return ::connect(fd_, (sockaddr*)&addr, sizeof(addr));
 }
 
-ssize_t TcpSocket::send(int fd, const void* data, size_t len) noexcept {
+ssize_t TcpSocket::Send(int fd, const void* data, size_t len) noexcept {
     return ::send(fd, data, len, 0);
 }
 
-ssize_t TcpSocket::recv(int fd, void* buf, size_t len) noexcept {
+ssize_t TcpSocket::Recv(int fd, void* buf, size_t len) noexcept {
     return ::recv(fd, buf, len, 0);
 }
 
-void TcpSocket::close(int fd) noexcept {
+void TcpSocket::Close(int fd) noexcept {
     ::close(fd);
 }
 
-void TcpSocket::retry() noexcept {
+void TcpSocket::Retry() noexcept {
     unsigned int temp = 0;
     while (fd_ < 0 && temp < loop_) {
         fd_ = socket(AF_INET, SOCK_STREAM, 0);
@@ -78,6 +78,6 @@ void TcpSocket::retry() noexcept {
     }
 }
 
-bool TcpSocket::aliviable() const noexcept {
-    return get_sockfd() >= 0;
+bool TcpSocket::IsAliviable() const noexcept {
+    return GetSockfd() >= 0;
 }

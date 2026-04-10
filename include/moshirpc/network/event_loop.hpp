@@ -30,39 +30,39 @@ public:
      * @brief 添加fd到epoll监听，并绑定一个Channel做事件分发
      *        不允许在多个线程中调用该函数，该函数的调用只允许在创建EventLoop对象的线程中使用
      */
-    bool add_fd(int fd, std::shared_ptr<Channel> channel);
+    bool AddFd(int fd, std::shared_ptr<Channel> channel);
 
     /**
      * @brief 更新已监听fd绑定的Channel及其关注事件（epoll_ctl MOD）
      */
-    bool reset_channel(int fd, std::shared_ptr<Channel> channel);
+    bool ResetChannel(int fd, std::shared_ptr<Channel> channel);
 
     /**
      * @brief 不再监听fd上到来的事件，专注于删除监听事件，不会关闭文件描述符
      */
-    bool remove_fd(int fd);
+    bool RemoveFd(int fd);
 
     /**
      * @brief 启动EventLoop（只能由创建线程调用）
      */
-    bool start();
+    bool Start();
 
     /**
      * @brief 请求停止事件循环（线程安全）
      */
-    bool stop();
+    bool Stop();
 
-    bool get_run_status() const { return flag_.load(); }
-
-private:
-    bool verify_thread_id_() const { return std::this_thread::get_id() == default_thread_id_; }
-
-    void wakeup_();
-    void drain_wakeup_fd_();
-    bool eventloop_run_();
+    bool GetRunStatus() const { return running_.load(); }
 
 private:
-    std::atomic<bool> flag_{false};
+    bool VerifyThreadId_() const { return std::this_thread::get_id() == default_thread_id_; }
+
+    void Wakeup_();
+    void DrainWakeupFd_();
+    bool EventloopRun_();
+
+private:
+    std::atomic<bool> running_{false};
     std::thread::id default_thread_id_;
 
     int epoll_fd_{-1};

@@ -515,3 +515,73 @@ TEST(TimerTest, ConcurrentAddClearStopStressNoHang) {
         ::testing::ExitedWithCode(0),
         "");
 }
+
+TEST(TimerTest, StopWithoutStartIsSafe) {
+    Timer timer;
+    timer.Stop();
+    timer.Stop();
+}
+
+TEST(TimerTest, ClearBeforeStartCancelsQueuedTasks) {
+    Timer timer;
+    std::atomic<int> hits{0};
+
+    timer.AddMsTask(30, [&] { hits.fetch_add(1, std::memory_order_relaxed); });
+    timer.AddMsTask(30, [&] { hits.fetch_add(1, std::memory_order_relaxed); }, true);
+
+    timer.Clear();
+    timer.Start();
+    std::this_thread::sleep_for(120ms);
+    timer.Stop();
+
+    EXPECT_EQ(hits.load(std::memory_order_relaxed), 0);
+}
+
+TEST(TimerTest, CallbackCanAddTaskWithoutDeadlock) {
+    Timer timer;
+    timer.Start();
+
+    std::atomic<int> hits{0};
+    std::mutex mtx;
+    std::condition_variable cv;
+
+    timer.AddMsTask(10, [&] {
+        timer.AddMsTask(10, [&] {
+            hits.fetch_add(1, std::memory_order_relaxed);
+            cv.notify_all();
+        });
+    });
+
+    {
+        std::unique_lock<std::mutex> lk(mtx);
+        ASSERT_TRUE(cv.wait_for(lk, 800ms, [&] { return hits.load(std::memory_order_relaxed) >= 1; }));
+    }
+    timer.Stop();
+    EXPECT_EQ(hits.load(std::memory_order_relaxed), 1);
+}
+
+TEST(TimerTest, CallbackCanClearWithoutDeadlock) {
+    GTEST_FLAG_SET(death_test_style, "threadsafe");
+
+    ASSERT_EXIT(
+        {
+            alarm(3);
+
+            Timer timer;
+            timer.Start();
+
+            std::atomic<int> hits{0};
+            timer.AddMsTask(1, [&] {
+                hits.fetch_add(1, std::memory_order_relaxed);
+                timer.Clear();
+            }, true);
+
+            std::this_thread::sleep_for(50ms);
+            timer.Stop();
+
+            if (hits.load(std::memory_order_relaxed) < 1) _exit(1);
+            _exit(0);
+        },
+        ::testing::ExitedWithCode(0),
+        "");
+}

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <iostream>
 #include <mutex>
 #include <pthread.h>
@@ -13,6 +14,7 @@ using moshi::Alarm;
 using std::chrono::milliseconds;
 using std::chrono::steady_clock;
 using std::chrono::time_point;
+
 
 bool Alarm::IsExpired() const {
     auto now_timepoint = steady_clock::now();
@@ -32,10 +34,18 @@ void Timer::AddMsTask(uint delay,
                     bool is_loop) {
     milliseconds delay_ms(delay);
     auto next_timepoint = steady_clock::now() + delay_ms;
+    uint64_t id;
     
     {
-        std::lock_guard<std::mutex> locker(mtx_);
-        q_.push({next_timepoint, callback, delay_ms, is_loop});
+        std::lock_guard<std::mutex> q_locker(q_mtx_);
+        Alarm am = {next_timepoint, callback, delay_ms, FetchID_()};
+        q_.push(am);
+        id = am.GetID();
+    }
+
+    if(is_loop) {
+        std::lock_guard<std::mutex> hash_locker(hash_mtx_);
+        loop_alarms_.insert(id);
     }
     cv_.notify_all();
 }
@@ -48,45 +58,78 @@ void Timer::Start() {
     t_ = std::thread([&]() {
         while(running_) {
             time_point<steady_clock> next_timepoint;
-            std::unique_lock<std::mutex> locker(mtx_);
+            std::unique_lock<std::mutex> locker(q_mtx_);
             if(!q_.empty())
                 next_timepoint = q_.top().GetNextTimePoint();
             else
                 next_timepoint = steady_clock::now() + milliseconds(1); // 1ms后重新进行检查
             cv_.wait_until(locker, next_timepoint);
+            locker.unlock(); // 防止死锁
             HandleAlarm_();
         }
     });
 }
 
 void Timer::Stop() {
+    if(t_.get_id() == std::this_thread::get_id())
+        return; // 不允许自调用Stop()
+
+    if(!running_.load())
+        return;
+
     running_ = false;
-    t_.join();
+
+    Clear();
+    cv_.notify_all();
+    if(t_.joinable())
+        t_.join();
 }
 
 void Timer::Clear() {
-    while(!q_.empty()) {
-        auto t = q_.top();
-        q_.pop();
-        t(); // 提前进行处理，可能其中有资源释放相关的内容
+    std::lock_guard<std::mutex> locker(q_mtx_);
+    {
+        std::lock_guard<std::mutex> hash_locker(hash_mtx_);
+        loop_alarms_.clear();
     }
+    while(!q_.empty())
+        q_.pop();
+
+    cv_.notify_all();
 }
 
 void Timer::HandleAlarm_() {
-    auto now = steady_clock::now();
-    while(!q_.empty()) {
-        if(q_.top().GetNextTimePoint() > now) {
+    std::unique_lock<std::mutex> q_locker(q_mtx_, std::defer_lock);
+
+    while(running_) {
+        q_locker.lock();
+        if (q_.empty()) {
+            q_locker.unlock();
+            return;
+        }
+
+        auto am = q_.top();
+        auto now = steady_clock::now();
+        if(am.GetNextTimePoint() > now) {
+            q_locker.unlock();
             break;
         }
-        
-        auto temp = q_.top();
         q_.pop();
+        q_locker.unlock();
 
-        temp();
+        am();
+        uint64_t id = am.GetID();
         
-        if(temp.IsLooped()) {
-            temp.Reset();
-            q_.push(temp);
+        std::unique_lock<std::mutex> hash_locker(hash_mtx_);
+        if(loop_alarms_.find(id) != loop_alarms_.end() && running_) {
+            hash_locker.unlock();
+            am.Reset();
+            q_locker.lock();
+            q_.push(am);
+            q_locker.unlock();
         }
     }
+}
+
+uint64_t Timer::FetchID_() {
+    return alarm_id_count_++;
 }

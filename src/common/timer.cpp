@@ -1,46 +1,92 @@
+#include <algorithm>
 #include <chrono>
-#include <condition_variable>
+#include <iostream>
 #include <mutex>
-#include <stdexcept>
+#include <pthread.h>
 #include <thread>
 
-#include "timer.hpp"
+#include "common/timer.hpp"
+#include "common/time_stamp.hpp"
 
-AdvancedConditionalTimer::~AdvancedConditionalTimer() {
-    stop();
+using moshi::Timer;
+using moshi::Alarm;
+using std::chrono::milliseconds;
+using std::chrono::steady_clock;
+using std::chrono::time_point;
+
+bool Alarm::IsExpired() const {
+    auto now_timepoint = steady_clock::now();
+    return now_timepoint >= next_timepoint_;
 }
 
-void AdvancedConditionalTimer::start_min(const int& min, OnTimeCallback callback) {
-    if(running_)
-        throw std::logic_error("AdvancedConditionalTimer::start_min: Timer already running!!!");
+void Alarm::Reset() {
+    next_timepoint_ = steady_clock::now() + delay_;
+}
 
-    running_ = true;
+time_point<steady_clock> Alarm::GetNextTimePoint() const {
+    return next_timepoint_;
+}
 
-    worker_ = std::thread([this, min, callback]() {
-        std::unique_lock<std::mutex> locker(mtx_);
+void Timer::AddMsTask(uint delay,
+                    std::function<void ()> callback,
+                    bool is_loop) {
+    milliseconds delay_ms(delay);
+    auto next_timepoint = steady_clock::now() + delay_ms;
+    
+    {
+        std::lock_guard<std::mutex> locker(mtx_);
+        q_.push({next_timepoint, callback, delay_ms, is_loop});
+    }
+    cv_.notify_all();
+}
+
+void Timer::Start() {
+    if(running_.exchange(true)) {
+        return;
+    }
+
+    t_ = std::thread([&]() {
         while(running_) {
-            // 睡眠指定时间
-            std::cv_status status = cv_.wait_for(locker, std::chrono::minutes(min));
-
-            // 若是是被唤醒的，说明有文件写入，重置定时器
-            // 若是超时，结束定时器
-            if(status == std::cv_status::timeout) {
-                running_ = false;
-                callback();
-                break;
-            }
+            time_point<steady_clock> next_timepoint;
+            std::unique_lock<std::mutex> locker(mtx_);
+            if(!q_.empty())
+                next_timepoint = q_.top().GetNextTimePoint();
+            else
+                next_timepoint = steady_clock::now() + milliseconds(1); // 1ms后重新进行检查
+            cv_.wait_until(locker, next_timepoint);
+            HandleAlarm_();
         }
     });
 }
 
-void AdvancedConditionalTimer::reset_timer() {
-    cv_.notify_all();
+void Timer::Stop() {
+    running_ = false;
+    t_.join();
 }
 
-void AdvancedConditionalTimer::stop() {
-    running_ = false;
+void Timer::Clear() {
+    while(!q_.empty()) {
+        auto t = q_.top();
+        q_.pop();
+        t(); // 提前进行处理，可能其中有资源释放相关的内容
+    }
+}
 
-    cv_.notify_all();
-    if(worker_.joinable())
-        worker_.join();
+void Timer::HandleAlarm_() {
+    auto now = steady_clock::now();
+    while(!q_.empty()) {
+        if(q_.top().GetNextTimePoint() > now) {
+            break;
+        }
+        
+        auto temp = q_.top();
+        q_.pop();
+
+        temp();
+        
+        if(temp.IsLooped()) {
+            temp.Reset();
+            q_.push(temp);
+        }
+    }
 }

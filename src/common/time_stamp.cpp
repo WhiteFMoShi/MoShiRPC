@@ -1,11 +1,11 @@
 #include <chrono>
 #include <sstream>
 
-#include "time_stamp.hpp"
+#include "common/time_stamp.hpp"
 
 // #define TIMESTAMP_DEBUG
 
-std::string TimeStamp::date() {
+std::string TimeStamp::Date() {
     auto now = std::chrono::system_clock::now();
     std::time_t t = std::chrono::system_clock::to_time_t(now);
     std::tm tm{};
@@ -19,7 +19,7 @@ std::string TimeStamp::date() {
     return oss.str();
 }
 
-std::string TimeStamp::now() {
+std::string TimeStamp::Now() {
     auto now = std::chrono::system_clock::now();
     std::time_t t = std::chrono::system_clock::to_time_t(now);
     std::tm tm{};

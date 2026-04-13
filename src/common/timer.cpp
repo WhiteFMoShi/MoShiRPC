@@ -47,7 +47,7 @@ void Timer::AddMsTask(uint delay,
         std::lock_guard<std::mutex> hash_locker(hash_mtx_);
         loop_alarms_.insert(id);
     }
-    cv_.notify_all();
+    cv_.notify_one();
 }
 
 void Timer::Start() {
@@ -94,7 +94,7 @@ void Timer::Clear() {
     while(!q_.empty())
         q_.pop();
 
-    cv_.notify_all();
+    cv_.notify_one();
 }
 
 void Timer::HandleAlarm_() {

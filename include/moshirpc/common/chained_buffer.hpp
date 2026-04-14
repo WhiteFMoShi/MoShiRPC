@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <sys/types.h>
 
 namespace moshi {
@@ -8,36 +10,34 @@ namespace moshi {
  * 
  */
 struct BufferNode {
-    BufferNode(uint node_size);
+    explicit BufferNode(std::size_t node_size);
     ~BufferNode();
 
     /**
      * @brief 删除缓冲区节点中的数据存储区，释放内存
      * 
      */
-    void release_data_memory();
+    void ReleaseNode();
 
     /**
      * @brief 重置缓冲区节点的状态，将其标记为未使用状态
      * 
      */
-    void reset_node();
+    void ResetNode();
 
-    bool is_used() const { return used_size > 0; }
+    bool IsUsed() const { return used_size > 0; }
 
-    bool is_special() const { return SPECIAL_FLAG; } // 看是不是哨兵
+    ssize_t WriteableSize() const;
+    ssize_t ReadableSize() const;
+
 public:
     BufferNode* next;
     BufferNode* prev;
 
-    bool SPECIAL_FLAG; // 哨兵位(标识head_node_)
-    bool MORE_FLAG; // More_Node(false/true)
-    bool HEAD_FLAG; // HEAD_NODE
-    bool TAIL_FLAG; // TAIL_NODE
-
     // 读写控制
-    uint used_size; // 实际使用的大小
-    uint read_offset; // 读取偏移量(断点续读)
+    std::size_t capacity;  // data 缓冲区容量（byte）
+    std::size_t used_size;   // 实际写入的大小（byte）
+    std::size_t read_offset; // 读取偏移量（byte）
     char* data; // buffer
 };
 
@@ -54,7 +54,7 @@ public:
     * @param node_size 单个缓冲区节点的大小，单位为BYTE
     * @param max_node_count 最大缓冲区节点数量
     */
-    ChainedBuffer(uint node_size, uint max_node_count);
+    ChainedBuffer(std::size_t node_size, std::size_t max_node_count);
     ~ChainedBuffer();
 
     ChainedBuffer(ChainedBuffer&&) = delete;
@@ -68,7 +68,7 @@ public:
      * @param len 
      * @return int 写入的字节数, 写入失败返回-1
      */
-    int write(const void* data, const int len);
+    int Write(const void* data, const int len);
 
     /**
      * @brief 尝试直接获取一个完整的报文，将数据存入ds中
@@ -76,16 +76,16 @@ public:
      * @param dest 
      * @return int 读取的字节数, 读取失败返回-1
      */
-    int read(void* dest, const uint dest_len);
+    int Read(void* dest, const std::size_t dest_len);
 
-    bool empty() const  { return size_ == 0; }
+    bool Empty() const;
 
     /**
      * @brief 清空缓冲区中的所有数据结点
-     * @details 清除数据结点,但是不会清楚head_node_(哨兵结点)
+     * @details 清除数据结点,但是不会清除head_node_(哨兵结点)
      * 
      */
-    void clear();
+    void Clear();
 
     /**
      * @brief 该函数比较特别，返回的是链表中已使用的节点的个数，而不是其中的数据大小
@@ -93,9 +93,10 @@ public:
      * @details 该函数的原意应该是要获得可读的数据字节长度，但是由于设计问题，实现极为困难
      * @return int 可读的节点个数
      */
-    int size() const { return size_; }
+    int Size() const;
 
-    uint get_node_count() const { return size_; }
+    // Backward-compat for existing tests / old naming.
+    int get_node_count() const { return Size(); }
 
 private:
     /**
@@ -118,9 +119,6 @@ private:
     /* node操作 */
     BufferNode* create_node_(); // 创建node
     int del_node_(BufferNode*); // 删除node
-
-    void set_node_flag_(BufferNode* node, bool HEAD_FLAG, bool TAIL_FLAG, bool MORE_FLAG);
-    bool set_node_data_(BufferNode* node, const void* data, int len);
     
     /**
      * @brief 将一个可回收的结点移动至缓冲区的末尾
@@ -135,10 +133,10 @@ private:
     BufferNode* head_node_;
     BufferNode* tail_node_;
 
-    uint size_; // 节点个数
-    uint capacity_;
-    const uint SINGLE_NODE_SIZE_OF_BYTE;
-    const uint MAX_NODE_COUNT;
+    std::size_t size_;     // 已使用节点个数（不含哨兵）
+    std::size_t capacity_; // 当前已分配的数据节点个数（不含哨兵）
+    const std::size_t SINGLE_NODE_SIZE_OF_BYTE;
+    const std::size_t MAX_NODE_COUNT;
 };
 
 } // namespace moshi

@@ -1,7 +1,7 @@
 #include <string>
 
 #include "log_entry.hpp"
-#include "time_stamp.hpp"
+#include "common/time_stamp.hpp"
 #include "log_format.hpp"
 
 using namespace moshi;
@@ -9,10 +9,10 @@ using namespace moshi;
 // #define LOGENTRY_DEBUG
 
 LogEntry::LogEntry(LogLevel level, const std::string& module, const std::string& msg) {
-    date_ = TimeStamp::date();
+    date_ = TimeStamp::Date();
 
     LogFormat fmt;
-    msg_ = fmt.makeLogln(level, module, TimeStamp::now(), msg);
+    msg_ = fmt.makeLogln(level, module, TimeStamp::Now(), msg);
 #ifdef LOGENTRY_DEBUG
     std::cout << "LogEntry's msg is: " << msg_;
     std::cout << "LogEntry's create time is: " << TimeStamp::now() << std::endl;
@@ -20,9 +20,9 @@ LogEntry::LogEntry(LogLevel level, const std::string& module, const std::string&
 }
 
 LogEntry::LogEntry(LogLevel level, std::string&& module, std::string&& msg) 
-    : date_(TimeStamp::date()) {
+    : date_(TimeStamp::Date()) {
     LogFormat fmt;
-    msg_ = fmt.makeLogln(level, std::move(module), TimeStamp::now(), std::move(msg));
+    msg_ = fmt.makeLogln(level, std::move(module), TimeStamp::Now(), std::move(msg));
 #ifdef LOGENTRY_DEBUG
     std::cout << "LogEntry's msg is: " << msg_;
     std::cout << "LogEntry's create time is: " << TimeStamp::now() << std::endl;

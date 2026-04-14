@@ -6,7 +6,7 @@
 #include <string>
 
 #include "log_entry.hpp"
-#include "timer.hpp"
+#include "common/timer.hpp"
 
 class LogFileManager {
 public:

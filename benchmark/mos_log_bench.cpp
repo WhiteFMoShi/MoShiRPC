@@ -3,7 +3,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
-#include "log.hpp"
+#include "common/mos_log.hpp"
 
 using namespace moshi;
 

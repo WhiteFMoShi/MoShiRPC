@@ -1,5 +1,6 @@
-#include "log_queue.hpp"
 #include <stdexcept>
+
+#include "log_queue.hpp"
 
 // 检查队列是否为空
 bool LogQueue::empty() {

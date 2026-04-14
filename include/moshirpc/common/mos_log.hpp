@@ -41,8 +41,15 @@ public:
      * @param module 模块信息
      * @param msg 日志信息
      */
-    static void terminal_log(LogLevel level, const std::string& module, const std::string& msg);
+    static void print(LogLevel level, const std::string& module, const std::string& msg);
 
+    
+    /**
+     * @brief 关闭线程池，并清理队列中的所有日志条目。
+     * 
+     * @warning 此函数不应被直接调用，因为 open() 函数尚未实现。
+     */
+    void close();
 private:
     // PIMPL 封装
     struct Impl;
@@ -59,12 +66,6 @@ private:
     Log();
     ~Log();
 
-    /**
-     * @brief 关闭线程池，并清理队列中的所有日志条目。
-     * 
-     * @warning 此函数不应被直接调用，因为 open() 函数尚未实现。
-     */
-    void close();
 };
 
 } // namespace moshi

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "log.hpp"
+#include "common/mos_log.hpp"
 
 class LogEntry {
 public:

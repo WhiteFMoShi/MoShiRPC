@@ -20,7 +20,7 @@ target("network_module")
 target("common_module")
     set_kind("static")
     add_includedirs("include/moshirpc")
-    add_files("src/common/*.cpp")
+    add_files("src/common/timer.cpp") -- 暂时只使用timer
 
 includes("tests")
 includes("benchmark")

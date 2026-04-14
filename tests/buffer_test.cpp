@@ -3,7 +3,7 @@
 #include <cstring>
 #include <vector>
 
-#include "buffer.hpp"
+#include "common/chained_buffer.hpp"
 
 using namespace moshi;
 
@@ -26,24 +26,24 @@ TEST_F(ChainedBufferTest, BasicWriteAndRead) {
     const int data_len = strlen(test_data);
     
     // 写入数据
-    int write_result = buffer_->write(test_data, data_len);
+    int write_result = buffer_->Write(test_data, data_len);
     EXPECT_EQ(write_result, data_len);
-    EXPECT_FALSE(buffer_->empty());
+    EXPECT_FALSE(buffer_->Empty());
     
     // 读取数据
     char read_data[64] = {0};
-    int read_result = buffer_->read(read_data, data_len);
+    int read_result = buffer_->Read(read_data, data_len);
     EXPECT_EQ(read_result, data_len);
     EXPECT_STREQ(test_data, read_data);
 }
 
 // 测试空缓冲区
 TEST_F(ChainedBufferTest, EmptyBuffer) {
-    EXPECT_TRUE(buffer_->empty());
+    EXPECT_TRUE(buffer_->Empty());
     EXPECT_EQ(buffer_->get_node_count(), 0);
     
     char read_data[64] = {0};
-    int read_result = buffer_->read(read_data, 64);
+    int read_result = buffer_->Read(read_data, 64);
     EXPECT_EQ(read_result, 0);
 }
 
@@ -53,12 +53,12 @@ TEST_F(ChainedBufferTest, LargeDataWriteAndRead) {
     std::string large_data(2048, 'A');  // 2KB数据，跨越2个节点
     
     // 写入数据
-    int write_result = buffer_->write(large_data.c_str(), large_data.size());
+    int write_result = buffer_->Write(large_data.c_str(), large_data.size());
     EXPECT_EQ(write_result, large_data.size());
     
     // 读取数据
     std::vector<char> read_data(large_data.size() + 1, 0);
-    int read_result = buffer_->read(read_data.data(), large_data.size());
+    int read_result = buffer_->Read(read_data.data(), large_data.size());
     EXPECT_EQ(read_result, large_data.size());
     EXPECT_EQ(large_data, std::string(read_data.data()));
 }
@@ -68,24 +68,24 @@ TEST_F(ChainedBufferTest, MultipleWriteAndRead) {
     // 第一次写入
     const char* data1 = "First message";
     int len1 = strlen(data1);
-    int write1 = buffer_->write(data1, len1);
+    int write1 = buffer_->Write(data1, len1);
     EXPECT_EQ(write1, len1);
     
     // 第二次写入
     const char* data2 = "Second message";
     int len2 = strlen(data2);
-    int write2 = buffer_->write(data2, len2);
+    int write2 = buffer_->Write(data2, len2);
     EXPECT_EQ(write2, len2);
     
     // 读取第一次写入的数据
     char read1[64] = {0};
-    int read_result1 = buffer_->read(read1, len1);
+    int read_result1 = buffer_->Read(read1, len1);
     EXPECT_EQ(read_result1, len1);
     EXPECT_STREQ(data1, read1);
     
     // 读取第二次写入的数据
     char read2[64] = {0};
-    int read_result2 = buffer_->read(read2, len2);
+    int read_result2 = buffer_->Read(read2, len2);
     EXPECT_EQ(read_result2, len2);
     EXPECT_STREQ(data2, read2);
 }
@@ -96,19 +96,19 @@ TEST_F(ChainedBufferTest, PartialRead) {
     const int data_len = strlen(test_data);
     
     // 写入数据
-    int write_result = buffer_->write(test_data, data_len);
+    int write_result = buffer_->Write(test_data, data_len);
     EXPECT_EQ(write_result, data_len);
     
     // 部分读取
     const int partial_len = 10;
     char read_data[64] = {0};
-    int read_result = buffer_->read(read_data, partial_len);
+    int read_result = buffer_->Read(read_data, partial_len);
     EXPECT_EQ(read_result, partial_len);
     EXPECT_EQ(strncmp(test_data, read_data, partial_len), 0);
     
     // 读取剩余部分
     char remaining_data[64] = {0};
-    int remaining_result = buffer_->read(remaining_data, data_len - partial_len);
+    int remaining_result = buffer_->Read(remaining_data, data_len - partial_len);
     EXPECT_EQ(remaining_result, data_len - partial_len);
     EXPECT_EQ(strncmp(test_data + partial_len, remaining_data, data_len - partial_len), 0);
 }
@@ -119,35 +119,35 @@ TEST_F(ChainedBufferTest, ClearBuffer) {
     const int data_len = strlen(test_data);
     
     // 写入数据
-    int write_result = buffer_->write(test_data, data_len);
+    int write_result = buffer_->Write(test_data, data_len);
     EXPECT_EQ(write_result, data_len);
-    EXPECT_FALSE(buffer_->empty());
+    EXPECT_FALSE(buffer_->Empty());
     
     // 清空缓冲区
-    buffer_->clear();
-    EXPECT_TRUE(buffer_->empty());
+    buffer_->Clear();
+    EXPECT_TRUE(buffer_->Empty());
     EXPECT_EQ(buffer_->get_node_count(), 0);
     
     // 尝试读取应该返回0
     char read_data[64] = {0};
-    int read_result = buffer_->read(read_data, 64);
+    int read_result = buffer_->Read(read_data, 64);
     EXPECT_EQ(read_result, 0);
 }
 
 // 测试边界条件：写入空数据
 TEST_F(ChainedBufferTest, WriteEmptyData) {
-    int write_result = buffer_->write(nullptr, 0);
+    int write_result = buffer_->Write(nullptr, 0);
     EXPECT_EQ(write_result, 0);
-    EXPECT_TRUE(buffer_->empty());
+    EXPECT_TRUE(buffer_->Empty());
 }
 
 // 测试边界条件：读取空数据
 TEST_F(ChainedBufferTest, ReadEmptyData) {
     char read_data[64] = {0};
-    int read_result = buffer_->read(read_data, 0);
+    int read_result = buffer_->Read(read_data, 0);
     EXPECT_EQ(read_result, -1);  // 根据实现，应该返回-1表示错误
     
-    read_result = buffer_->read(nullptr, 64);
+    read_result = buffer_->Read(nullptr, 64);
     EXPECT_EQ(read_result, -1);  // 根据实现，应该返回-1表示错误
 }
 
@@ -159,18 +159,18 @@ TEST_F(ChainedBufferTest, NodeCountLimit) {
     // 写入数据，应该成功
     const char* data1 = "First data block";
     int len1 = strlen(data1);
-    int write1 = small_buffer.write(data1, len1);
+    int write1 = small_buffer.Write(data1, len1);
     EXPECT_EQ(write1, len1);
     
     // 写入更多数据，但不超过第二个节点
     const char* data2 = "Second data block";
     int len2 = strlen(data2);
-    int write2 = small_buffer.write(data2, len2);
+    int write2 = small_buffer.Write(data2, len2);
     EXPECT_EQ(write2, len2);
     
     // 尝试写入超过节点限制的数据
     std::string large_data(1024, 'X');  // 需要第三个节点
-    int write3 = small_buffer.write(large_data.c_str(), large_data.size());
+    int write3 = small_buffer.Write(large_data.c_str(), large_data.size());
     EXPECT_EQ(write3, -1);  // 应该失败
 }
 
@@ -183,12 +183,12 @@ TEST_F(ChainedBufferTest, BinaryData) {
     }
     
     // 写入二进制数据
-    int write_result = buffer_->write(binary_data.data(), binary_data.size());
+    int write_result = buffer_->Write(binary_data.data(), binary_data.size());
     EXPECT_EQ(write_result, binary_data.size());
     
     // 读取二进制数据
     std::vector<unsigned char> read_data(binary_data.size(), 0);
-    int read_result = buffer_->read(read_data.data(), binary_data.size());
+    int read_result = buffer_->Read(read_data.data(), binary_data.size());
     EXPECT_EQ(read_result, binary_data.size());
     
     // 验证数据

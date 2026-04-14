@@ -27,3 +27,13 @@ target("timer_test")
     add_deps("common_module")
     add_packages("gtest")
     add_links("gtest_main")
+
+target("threadpool_test")
+    set_kind("binary")
+    add_includedirs("../include/moshirpc")
+    add_files("threadpool_test.cpp")
+    -- Only for linking: use the existing implementation unit, but tests are designed
+    -- strictly from the header contract.
+    add_files("../src/common/thread_pool.cpp")
+    add_packages("gtest")
+    add_links("gtest_main")
